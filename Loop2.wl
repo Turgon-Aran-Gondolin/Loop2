@@ -8,8 +8,15 @@ TwoLoop::usage="TwoLoop[denor1,denor2,nor,k1,k2,dim], \n i.e. TwoLoop[{{k2-k1,1}
 FeynmanParametrize::usage="";
 Ffeyn::usage="";
 SP3::usage="";
+CheckDenorForm::usage="";
 FeynmanParametrize::listQ="Variable \"`1`\" is not a list. ";
 FeynmanParametrize::denor="Denorminator list is too short. ";
+DisplayFeynPara::usage="";
+DisplayTempResults::usage="";
+ListForm::usage="";
+ExpandD::usage="";
+ExpandDOrder::usage="";
+ExpandDValue::usage="";
 (*FeynmanParametrize::numer="The last line of the input list is not numbers, please add the power of denorminators. ";*)
 
 
@@ -64,22 +71,6 @@ EliminateVarProduct[expr_,var_,d_]:=
 
 (* ::Code:: *)
 (*ExpandSP[Evaluate[SP3[k+p]]]*)
-
-
-(* ::Code:: *)
-
-(*TagBox[*)
-(*StyleBox[*)
-(*RowBox[{"Dot", "[", *)
-(*RowBox[{*)
-(*RowBox[{"Plus", "[", *)
-(*RowBox[{"k", ",", "p"}], "]"}], ",", *)
-(*RowBox[{"Plus", "[", *)
-(*RowBox[{"k", ",", "p"}], "]"}]}], "]"}],*)
-(*ShowSpecialCharacters->False,*)
-(*ShowStringCharacters->True,*)
-(*NumberMarks->True],*)
-(*FullForm]\)//.Dot[o__,a___]:>Distribute[Dot[o,a]]*)
 
 
 (* ::Code:: *)
@@ -155,6 +146,7 @@ EliminateVarProduct[expr_,var_,d_]:=
 
 CheckDenorForm[denor_]:=If[NumberQ@Last[#],#,#~Join~{1}]&/@denor;
 
+
 OneLoop[odenor_,nor_,var_,dim_,opts:OptionsPattern[{DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3}]]:=
 Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)},
   If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor]];
@@ -170,14 +162,14 @@ Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)
   (*Print[newnor];*)
   nnapart=DeleteCases[MapIndexed[#1 Boole[OddQ[First@#2]]&,CoefficientList[newnor,var]],_?(#==0&)];
   (*Print[nnapart];*)
-  If[OptionValue[DisplayTempResults],Print["integrand=",Plus@@MapIndexed[#1 Ffeyn[Subscript[\[CapitalDelta], var],dim,Total[Last@#&/@denor],2(First[#2]-1)]&,nnapart],"\n",Subscript[\[CapitalDelta], var],"=",Delta];
+  If[OptionValue[DisplayTempResults],Print["integrand=",Plus@@MapIndexed[#1 Ffeyn[Subscript[\[CapitalDelta], var],dim,Total[Last/@denor],2(First[#2]-1)]&,nnapart],"\n",Subscript[\[CapitalDelta], var],"=",Delta];
   MapIndexed[Print["nor",2(First@#2-1),"=",#1]&,nnapart],Null];
-  res=MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],2(First[#2]-1)]&,nnapart];
+  res=MapIndexed[#1 Ffeyn[Delta,dim,Total[Last/@denor],2(First[#2]-1)]&,nnapart];
   If[OptionValue[FirstLoop],
   Put[
   {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],2(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@(2(Range@Length@nnapart-1))},
   LocalObject["OneLoop"]],
-  {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Simplify[Total[res]] Times@@feyn[[2;;-2]]],Sequence@@feyn[[1]]}]
+  {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Simplify[Total[res] Times@@feyn[[2;;-2]]]],Sequence@@feyn[[1]]}]
   (*{shift,Delta,newnor}*)
 ];
 
@@ -187,11 +179,15 @@ Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)
 
 
 (* ::Code:: *)
-(*Get@OneLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],2}},k2^4,k2,d,ListForm->True]*)
+(* OneLoop[{{k1-p,1},{k1,2 m \[CapitalEpsilon],1},{Sqrt[k1^2-(2 m \[CapitalEpsilon] )/ x[1]],3-d/2}}, k1^4,k1,d,FeynParaVariable->y,SecondLoop->True,DisplayFeynPara->True,DisplayTempResults->True]*)
 
 
 (* ::Code:: *)
-(*OneLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],2}},SP3[k2]^2,k2,d,DisplayFeynPara->True]*)
+(*Get@OneLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],1}},1,k2,d,FirstLoop->True]*)
+
+
+(* ::Code:: *)
+(*OneLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],1}},1,k2,d,DisplayFeynPara->True]*)
 
 
 (* ::Input:: *)
@@ -206,20 +202,21 @@ nor1=oneloop[[2]];
 codenor=ReplaceAll[Total[feynpara1]->1][Coefficient[(First@#)^2,var2^2]]&/@Last[oneloop];
 denor=MapThread[Simplify[(First@#1)^2/#2]&,{Last[oneloop],codenor}];
 denor2=CheckDenorForm[odenor2];
+Print[MapThread[List[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}]];
 twoloop=MapThread[OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
-(*Print[oneloop,"\n",codenor,"\n",denor];*)
+Print["oneloop=",oneloop,"\n codenor=",codenor,"\n denor=",denor];
 (*Print[nor1];*)
-(*Print[twoloop];*)
+Print["twoloop=",twoloop];
 {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Times@@twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]}
 ];
 
 
 (* ::Code:: *)
-(*integrand=TwoLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],2}},{{k1-p,1},{k1,2m \[CapitalEpsilon],1}},SP3[k2]^2,k2,k1,d,DisplayFeynPara->True]*)
+(*integrand=TwoLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],1}},{{k1-p,1},{k1,2m \[CapitalEpsilon],2}},k1^4,k2,k1,d]*)
 
 
 (* ::Code:: *)
-(*integrand[[1]]=Series[integrand[[1]],{d,3,-1}]//Normal*)
+(*integrand[[1]]=(Series[integrand[[1]],{d,3,-1}]//Normal)/.\[CapitalEpsilon]->0*)
 
 
 (* ::Code:: *)
