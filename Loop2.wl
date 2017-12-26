@@ -3,8 +3,8 @@
 BeginPackage["Loop2`"]
 
 
-OneLoop::usage="OneLoop[], i.e. OneLoop[{{k-p},{k,m^2}},,k,d]";
-TwoLoop::usage="";
+OneLoop::usage="OneLoop[denor,nor,k,dim], i.e. OneLoop[{{k-p},{k,m^2}},,k,d]";
+TwoLoop::usage="TwoLoop[denor1,denor2,nor,k1,k2,dim], i.e. TwoLoop[{{k2-k1,1},{k2,2mE,1}},{{k1-p,1},{k1,2mE,2}},k1^4,k2,k1,d]";
 FeynmanParametrize::usage="";
 Ffeyn::usage="";
 SP3::usage="";
@@ -31,7 +31,7 @@ If[OptionValue[NoDelta],1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-
 (*denor is either {k-l,1}=(k-l)^2 or {k,m^2,1}=k^2-m^2*)
 
 
-FeynmanParametrize[denor_,OptionsPattern[{Variable->Global`x}]]:=Module[{xivars,measure,xipart,gammapart,integranddenor,explist},
+FeynmanParametrize[denor_,OptionsPattern[{Variable-> Global`x }]]:=Module[{xivars,measure,xipart,gammapart,integranddenor,explist},
 If[ListQ@denor,Null,Message[FeynmanParametrize::listQ,denor];Abort[]];
 explist=Last/@denor;
 xivars=OptionValue[Variable][#]&/@Range@Length@denor;
@@ -153,29 +153,32 @@ EliminateVarProduct[expr_,var_,d_]:=
 (*k^4/.Power[a_,n_?EvenQ]:>SP3[a]^(n/2)*)
 
 
-OneLoop[denor_,nor_,var_,dim_,opts:OptionsPattern[{DisplayFeynPara->False,DisplayTempResults->False,ListForm->False,FeynParaVariable->x}]]:=
-Module[{feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)},
-feyn=Get[FeynmanParametrize[denor,Variable->OptionValue[FeynParaVariable]]];
-feynpara=feyn[[1,All,1]];(*Print[feynpara];*)
-(*sphere=(2\[Pi]^(dim/2))/Gamma[dim/2];*)
-If[OptionValue[DisplayFeynPara],Print[feyn],Null];
-colist=FactorTerms[#,feynpara]&/@CoefficientList[Plus@@Last@feyn,var]//.{Total[feynpara]->1};
-shift=colist[[2]]/2;
-Delta=colist[[1]]-(shift)^2;
-newnor=nor/.Power[a_,n_?EvenQ]:>SP3[a]^(n/2)/.{var->var-shift};
-newnor=EliminateVarProduct[newnor//ExpandSP,var,dim]/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&)),b_]:>c  Dot[a,b]/.Dot[b_,a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&))]:>c  Dot[a,b]/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&)),b_(d_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&))]:>c d Dot[a,b]/.Dot[p_,p_]:>p^2;
-(*Print[newnor];*)
-nnapart=DeleteCases[MapIndexed[#1 Boole[OddQ[First@#2]]&,CoefficientList[newnor,var]],_?(#==0&)];
-(*Print[nnapart];*)
-If[OptionValue[DisplayTempResults],Print["integrand=",Plus@@MapIndexed[#1 Ffeyn[Subscript[\[CapitalDelta], var],dim,Total[Last@#&/@denor],2(First[#2]-1)]&,nnapart],"\n",Subscript[\[CapitalDelta], var],"=",Delta];
-MapIndexed[Print["nor",2(First@#2-1),"=",#1]&,nnapart],Null];
-res=MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],2(First[#2]-1)]&,nnapart];
-If[OptionValue[ListForm],
-Put[
-{Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],2(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@(2(Range@Length@nnapart-1))},
-LocalObject["OneLoop"]],
-{Simplify[Total[res]] Times@@feyn[[2;;-2]],Sequence@@feyn[[1]]}]
-(*{shift,Delta,newnor}*)
+CheckDenorForm[denor_]:=If[NumberQ@Last[#],#,#~Join~{1}]&/@denor;
+
+OneLoop[odenor_,nor_,var_,dim_,opts:OptionsPattern[{DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x}]]:=
+Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)},
+  If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor]];
+  feyn=Get[FeynmanParametrize[denor,Variable->OptionValue[FeynParaVariable]]];
+  feynpara=feyn[[1,All,1]];(*Print[feynpara];*)
+  (*sphere=(2\[Pi]^(dim/2))/Gamma[dim/2];*)
+  If[OptionValue[DisplayFeynPara],Print[feyn],Null];
+  colist=FactorTerms[#,feynpara]&/@CoefficientList[Plus@@Last@feyn,var]//.{Total[feynpara]->1};
+  shift=colist[[2]]/2;
+  Delta=colist[[1]]-(shift)^2;
+  newnor=nor/.Power[a_,n_?EvenQ]:>SP3[a]^(n/2)/.{var->var-shift};
+  newnor=EliminateVarProduct[newnor//ExpandSP,var,dim]/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&)),b_]:>c  Dot[a,b]/.Dot[b_,a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&))]:>c  Dot[a,b]/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&)),b_(d_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&))]:>c d Dot[a,b]/.Dot[p_,p_]:>p^2;
+  (*Print[newnor];*)
+  nnapart=DeleteCases[MapIndexed[#1 Boole[OddQ[First@#2]]&,CoefficientList[newnor,var]],_?(#==0&)];
+  (*Print[nnapart];*)
+  If[OptionValue[DisplayTempResults],Print["integrand=",Plus@@MapIndexed[#1 Ffeyn[Subscript[\[CapitalDelta], var],dim,Total[Last@#&/@denor],2(First[#2]-1)]&,nnapart],"\n",Subscript[\[CapitalDelta], var],"=",Delta];
+  MapIndexed[Print["nor",2(First@#2-1),"=",#1]&,nnapart],Null];
+  res=MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],2(First[#2]-1)]&,nnapart];
+  If[OptionValue[FirstLoop],
+  Put[
+  {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],2(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@(2(Range@Length@nnapart-1))},
+  LocalObject["OneLoop"]],
+  {Simplify[Total[res]] Times@@feyn[[2;;-2]],Sequence@@feyn[[1]]}]
+  (*{shift,Delta,newnor}*)
 ];
 
 
@@ -195,17 +198,15 @@ LocalObject["OneLoop"]],
 (*m (p.(q x1))^2+2 m p^2 p.(p x3)/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&)),b_(d_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&))]:>c d Dot[a,b]*)
 
 
-(p.(q x1))^2//FullForm
-
-
-TwoLoop[denor1_,denor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{DisplayTempResults->False,ListForm->False}]]:=
-Module[{feynpara1,oneloop,nor1,res,codenor,denor,twoloop},
-oneloop=Get@OneLoop[denor1,nor,var1,dim,ListForm->True];
+TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{DisplayTempResults->False,ListForm->False}]]:=
+Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
+oneloop=Get@OneLoop[denor1,nor,var1,dim,FirstLoop->True];
 feynpara1=oneloop[[1,1,All,1]];
 nor1=oneloop[[2]];
 codenor=ReplaceAll[Total[feynpara1]->1][Coefficient[(First@#)^2,var2^2]]&/@Last[oneloop];
 denor=MapThread[Simplify[(First@#1)^2/#2]&,{Last[oneloop],codenor}];
-twoloop=MapThread[OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
+denor2=CheckDenorForm[odenor2];
+twoloop=MapThread[OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
 (*Print[oneloop,"\n",codenor,"\n",denor];*)
 (*Print[nor1];*)
 (*Print[twoloop];*)
