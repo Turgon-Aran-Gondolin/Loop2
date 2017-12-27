@@ -84,26 +84,6 @@ EliminateVarProduct[expr_,var_,d_]:=
 (*((SP3[k+p])^3(SP3[k+q])^2//ExpandSP//((#/.k->-k//.Dot[-a_,b_]:>(-Dot[a,b])//.Dot[a_,-b_]:>(-Dot[a,b]))+#)/2&//Expand)/.Dot[p_,k]:>Dot[k,p]*)
 
 
-(* ::Input:: *)
-(*12 k^4 p^2 (k.p)^2/.{Power[f_?(!MatchQ[#,Power[_,_?(!#!=1&)]]&&MatchQ[#,Dot[k,_]]&&!MatchQ[#,Power]&&!NumberQ[#]&),n_]:>Inactive[Times]@@ConstantArray[f,n]}*)
-
-
-(* ::Input:: *)
-(*%9/.{Power[f_?(!MatchQ[#,Power[_,_?(!#!=1&)]]&&MatchQ[#,Dot[k,_]]&&!MatchQ[#,Power]&&!NumberQ[#]&),n_]:>Inactive[Times]@@ConstantArray[f,n]}/.Times[Dot[k,a_],Dot[k,b_]]:>Inactive[Times][Dot[k,a],Dot[k,b]]/.\!\(\**)
-(*TagBox[*)
-(*StyleBox[*)
-(*RowBox[{"Times", "[", *)
-(*RowBox[{*)
-(*RowBox[{"Dot", "[", *)
-(*RowBox[{"k", ",", "a_"}], "]"}], ",", *)
-(*RowBox[{*)
-(*RowBox[{"Inactive", "[", "Times", "]"}], "[", "b__", "]"}]}], "]"}],*)
-(*ShowSpecialCharacters->False,*)
-(*ShowStringCharacters->True,*)
-(*NumberMarks->True],*)
-(*FullForm]\):>Inactive[Times][Dot[k,a],b]*)
-
-
 (* ::Code:: *)
 (*k.q (k.p\!\(\**)
 (*TagBox["*",*)
@@ -194,7 +174,7 @@ Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)
 (*m (p.(q x1))^2+2 m p^2 p.(p x3)/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&)),b_(d_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&))]:>c d Dot[a,b]*)
 
 
-TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{DisplayTempResults->False,ListForm->False,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3}]]:=
+TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{DisplayTempResults->False,ListForm->False,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,ShowSecondLoopCommand->False}]]:=
 Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
 oneloop=Get@OneLoop[denor1,nor,var1,dim,FirstLoop->True];
 feynpara1=oneloop[[1,1,All,1]];
@@ -202,11 +182,11 @@ nor1=oneloop[[2]];
 codenor=ReplaceAll[Total[feynpara1]->1][Coefficient[(First@#)^2,var2^2]]&/@Last[oneloop];
 denor=MapThread[Simplify[(First@#1)^2/#2]&,{Last[oneloop],codenor}];
 denor2=CheckDenorForm[odenor2];
-Print[MapThread[List[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}]];
+If[OptionValue[ShowSecondLoopCommand],Print[MapThread[List[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}]],Null];
 twoloop=MapThread[OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
-Print["oneloop=",oneloop,"\n codenor=",codenor,"\n denor=",denor];
+(*Print["oneloop=",oneloop,"\n codenor=",codenor,"\n denor=",denor];*)
 (*Print[nor1];*)
-Print["twoloop=",twoloop];
+(*Print["twoloop=",twoloop];*)
 {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Times@@twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]}
 ];
 
