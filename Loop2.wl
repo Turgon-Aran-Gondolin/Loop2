@@ -13,10 +13,11 @@ FeynmanParametrize::listQ="Variable \"`1`\" is not a list. ";
 FeynmanParametrize::denor="Denorminator list is too short. ";
 DisplayFeynPara::usage="";
 DisplayTempResults::usage="";
-ListForm::usage="";
 ExpandD::usage="";
 ExpandDOrder::usage="";
 ExpandDValue::usage="";
+DivideNumerators::usage="";
+ShowSecondLoopCommand::usage="";
 (*FeynmanParametrize::numer="The last line of the input list is not numbers, please add the power of denorminators. ";*)
 
 
@@ -174,7 +175,7 @@ Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)
 (*m (p.(q x1))^2+2 m p^2 p.(p x3)/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&)),b_(d_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&))]:>c d Dot[a,b]*)
 
 
-TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{DisplayTempResults->False,ListForm->False,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,ShowSecondLoopCommand->False}]]:=
+TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{DisplayTempResults->False,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,ShowSecondLoopCommand->False,DivideNumerators->False}]]:=
 Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
 oneloop=Get@OneLoop[denor1,nor,var1,dim,FirstLoop->True];
 feynpara1=oneloop[[1,1,All,1]];
@@ -187,7 +188,9 @@ twoloop=MapThread[OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynPara
 (*Print["oneloop=",oneloop,"\n codenor=",codenor,"\n denor=",denor];*)
 (*Print[nor1];*)
 (*Print["twoloop=",twoloop];*)
-{If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Times@@twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]}
+If[OptionValue[DivideNumerators],
+{If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]},
+{If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Times@@twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]}]
 ];
 
 
