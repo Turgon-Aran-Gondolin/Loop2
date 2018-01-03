@@ -128,7 +128,7 @@ EliminateVarProduct[expr_,var_,d_]:=
 CheckDenorForm[denor_]:=If[NumberQ@Last[#],#,#~Join~{1}]&/@denor;
 
 
-OneLoop[odenor_,nor_,var_,dim_,opts:OptionsPattern[{DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3}]]:=
+OneLoop[odenor_,nor_,var_,dim_,opts:OptionsPattern[{ScaleValue->1,DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->True}]]:=
 Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)},
   If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor]];
   feyn=Get[FeynmanParametrize[denor,Variable->OptionValue[FeynParaVariable]]];
@@ -139,9 +139,12 @@ Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)
   shift=colist[[2]]/2;
   Delta=colist[[1]]-(shift)^2;
   newnor=nor/.Power[a_,n_?EvenQ]:>SP3[a]^(n/2)/.{var->var-shift};
+  If[OptionValue[DisplayNumerators],Print["Numerators after SP3 substitution: ",newnor],Null];
   newnor=EliminateVarProduct[newnor//ExpandSP,var,dim]/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&)),b_]:>c  Dot[a,b]/.Dot[b_,a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&))]:>c  Dot[a,b]/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&)),b_(d_?(Or@@(Map[Function[x,!FreeQ[#,x]],feynpara])&))]:>c d Dot[a,b]/.Dot[p_,p_]:>p^2;
+  If[OptionValue[DisplayNumerators],Print["Numerators after eliminate power odd term: ",newnor],Null];
   (*Print[newnor];*)
   nnapart=DeleteCases[MapIndexed[#1 Boole[OddQ[First@#2]]&,CoefficientList[newnor,var]],_?(#==0&)];
+  If[OptionValue[DisplayNumerators],Print["Numerators after division: ",nnapart],Null];
   (*Print[nnapart];*)
   If[OptionValue[DisplayTempResults],Print["integrand=",Plus@@MapIndexed[#1 Ffeyn[Subscript[\[CapitalDelta], var],dim,Total[Last/@denor],2(First[#2]-1)]&,nnapart],"\n",Subscript[\[CapitalDelta], var],"=",Delta];
   MapIndexed[Print["nor",2(First@#2-1),"=",#1]&,nnapart],Null];
@@ -150,7 +153,7 @@ Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)
   Put[
   {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],2(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@(2(Range@Length@nnapart-1))},
   LocalObject["OneLoop"]],
-  {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Simplify[Total[res] Times@@feyn[[2;;-2]]]],Sequence@@feyn[[1]]}]
+  {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}]+If[!MatchQ[OptionValue[ScaleValue],1],Normal@Series[OptionValue[ScaleValue],{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](dim-OptionValue[ExpandDValue])Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],0],OptionValue[ScaleValue] #]&[Simplify[Total[res] Times@@feyn[[2;;-2]]]],Sequence@@feyn[[1]]}]
   (*{shift,Delta,newnor}*)
 ];
 
@@ -175,22 +178,20 @@ Module[{denor,feyn,colist,shift,Delta,newnor,nnapart,res,int,feynpara(*,sphere*)
 (*m (p.(q x1))^2+2 m p^2 p.(p x3)/.Dot[a_(c_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&)),b_(d_?(Or@@(Map[Function[x,!FreeQ[#,x]],{x1,x2,x3}])&))]:>c d Dot[a,b]*)
 
 
-TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{DisplayTempResults->False,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,ShowSecondLoopCommand->False,DivideNumerators->False}]]:=
+TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,dim_,opts:OptionsPattern[{ScaleValue->1,DisplayTempResults->False,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,ShowSecondLoopCommand->False,DivideNumerators->False,DisplayNumerators->True}]]:=
 Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
-oneloop=Get@OneLoop[denor1,nor,var1,dim,FirstLoop->True];
+oneloop=Get@OneLoop[denor1,nor,var1,dim,FirstLoop->True,DisplayNumerators->OptionValue[DisplayNumerators]];
 feynpara1=oneloop[[1,1,All,1]];
 nor1=oneloop[[2]];
 codenor=ReplaceAll[Total[feynpara1]->1][Coefficient[(First@#)^2,var2^2]]&/@Last[oneloop];
 denor=MapThread[Simplify[(First@#1)^2/#2]&,{Last[oneloop],codenor}];
 denor2=CheckDenorForm[odenor2];
-If[OptionValue[ShowSecondLoopCommand],Print[MapThread[List[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}]],Null];
-twoloop=MapThread[OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
+If[OptionValue[ShowSecondLoopCommand],MapThread[Print["OneLoop[",Sequence[denor2~Join~{{Sqrt[#1],#2}},",",#4/#3^#2,",",var2,",",dim,",",FeynParaVariable->Global`y,",",SecondLoop->True],"]"]&,{denor,Last[oneloop][[All,2]],codenor,nor1}],Null];
+twoloop=MapThread[OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,dim,FeynParaVariable->Global`y,SecondLoop->True,FilterRules[{opts},{DisplayNumerators,ScaleValue}]]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
 (*Print["oneloop=",oneloop,"\n codenor=",codenor,"\n denor=",denor];*)
 (*Print[nor1];*)
-(*Print["twoloop=",twoloop];*)
-If[OptionValue[DivideNumerators],
-{If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]},
-{If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#]&[Times@@twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]}]
+If[OptionValue[DisplayTempResults],Print["twoloop=",twoloop],Null];
+{If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}]+If[!MatchQ[OptionValue[ScaleValue],1],Normal@Series[OptionValue[ScaleValue],{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](dim-OptionValue[ExpandDValue])Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],0],OptionValue[ScaleValue] #]&[If[OptionValue[DivideNumerators],twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]],Times@@twoloop[[All,1]] Times@@oneloop[[1,2;;-1]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,2;;-1]]}
 ];
 
 
