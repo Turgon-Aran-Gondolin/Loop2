@@ -138,14 +138,14 @@ EliminateVarProduct[expr_,var_,d_]:=
 (*k^4/.Power[a_,n_?EvenQ]:>SP3[a]^(n/2)*)
 
 
-CheckDenorForm[denor_]:=If[NumberQ@Last[#],#,#~Join~{1}]&/@denor;
+CheckDenorForm[denor_,dim_]:=If[NumberQ@Last[#]||!FreeQ[#,dim],#,#~Join~{1}]&/@denor;
 
 
 OneLoop[odenor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->True,FeynParaIN->{},DivideNumerators->False}]]:=
 Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, allfeynpara(*,sphere*)},
   (*Vector=DeleteDuplicates[Join[{var},exm,Vector]];*)
 
-  If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor]];
+  If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor,dim]];
 
   feyn=Get[FeynmanParametrize[denor,Variable->OptionValue[FeynParaVariable]]];
   feynpara=feyn[[1,All,1]];(*Print[feynpara];*)
@@ -171,7 +171,7 @@ Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, 
 
   If[OptionValue[DisplayNumerators],Print["Numerators after division: ",nnapart],Null];
   (*Print[nnapart];*)
-  If[OptionValue[DisplayTempResults],Print["integrand=",Plus@@MapIndexed[#1 Ffeyn[Subscript[\[CapitalDelta], var],dim,Total[Last/@denor],2(First[#2]-1)]&,nnapart],"\n",Subscript[\[CapitalDelta], var],"=",Delta];
+  If[OptionValue[DisplayTempResults],Print["integrand=",Plus@@MapIndexed[#1 Ffeyn[Subscript["\[CapitalDelta]", var],dim,Total[Last/@denor],2(First[#2]-1)]&,nnapart],"\n",Subscript["\[CapitalDelta]", var],"=",Delta];
 
   MapIndexed[Print["nor",2(First@#2-1),"=",#1]&,nnapart],Null];
 
@@ -215,7 +215,7 @@ TwoLoop[denor1_,odenor2_,nor_,var1_,var2_,exm_,dim_,opts:OptionsPattern[{(*Scale
 Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
   Vector=Union[{var1,var2},{exm}//Flatten];
 
-  denor2=CheckDenorForm[odenor2];
+  denor2=CheckDenorForm[odenor2,dim];
 
   If[FreeQ[denor1,var2],oneloop=OneLoop[denor1,nor,var1,exm~Join~{var2},dim];OneLoop[denor2,oneloop[[1]],var1,exm~Join~{var2},dim,FeynParaVariable->Global`y]~Join~oneloop[[2;;-1]],
 
