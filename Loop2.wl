@@ -5,6 +5,7 @@ BeginPackage["Loop2`"]
 
 OneLoop::usage="OneLoop[denor,nor,k,exm,dim], \n i.e. OneLoop[{{k-p},{k,m^2}},k2,k,p,d]";
 TwoLoop::usage="TwoLoop[denor1,denor2,nor,k1,k2,exm,dim], \n i.e. TwoLoop[{{k2-k1,1},{k2,2mE,1}},{{k1-p,1},{k1,2mE,2}},k1^4,k2,k1,p,d]";
+LoopIntegrate::usage="LoopIntegrate[integrand,Assumptions->{}]";
 FeynmanParametrize::usage="";
 Ffeyn::usage="";
 SP3::usage="";
@@ -13,6 +14,7 @@ EliminateVarProduct;
 CheckDenorForm::usage="";
 FeynmanParametrize::listQ="Variable \"`1`\" is not a list. ";
 FeynmanParametrize::denor="Denorminator list is too short. ";
+WithDiracDelta::usage="";
 DisplayFeynPara::usage="";
 DisplayTempResults::usage="";
 DisplayOneLoop;
@@ -253,6 +255,8 @@ Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
   {(If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#])&[If[OptionValue[DivideNumerators],Flatten[twoloop[[All,-1]] Times@@@twoloop[[All,1,2;;-1]]] Times@@oneloop[[1,2;;-1]],Plus@@(Flatten[twoloop[[All,-1]]Times@@@twoloop[[All,1,2;;-1]]]) Times@@oneloop[[1,2;;-1]]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,1,1]]}]
 ];
 
+
+LoopIntegrate[integrand_, asmp:OptionsPattern[{Assumptions->{}}]]:=Integrate@@(integrand~Join~FilterRules[{asmp},Options[Integrate]])
 
 (* ::Code:: *)
 (*integrand=TwoLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],1}},{{k1-p,1},{k1,2m \[CapitalEpsilon],2}},k1^4,k2,k1,d]*)
