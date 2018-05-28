@@ -50,15 +50,23 @@ If[OptionValue[NoDelta],1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-
 (*denor is either {k-l,1}=(k-l)^2 or {k,m^2,1}=k^2-m^2*)
 
 
-FeynmanParametrize[denor_,OptionsPattern[{Variable-> Global`x }]]:=Module[{xivars,measure,xipart,gammapart,integranddenor,explist},
+FeynmanParametrize[denor_,OptionsPattern[{Variable-> Global`x ,WithDiracDelta->False}]]:=Module[{xivars,measure,xipart,gammapart,integranddenor,explist},
 If[ListQ@denor,Null,Message[FeynmanParametrize::listQ,denor];Abort[]];
 explist=Last/@denor;
-xivars=OptionValue[Variable][#]&/@Range@Length@denor;
 (*If[AllTrue[explist,NumberQ],,Message[FeynmanParametrize::numer]];*)
-measure=({#,0,1}&/@xivars);
-xipart=DiracDelta[Plus@@xivars-1] Times@@MapThread[#1^(#2-1)&,{xivars,explist}];
+If[OptionValue[WithDiracDelta],
+  xivars=OptionValue[Variable][#]&/@Range@Length@denor;
+  measure=({#,0,1}&/@xivars);
+  xipart=DiracDelta[Plus@@xivars-1] Times@@MapThread[#1^(#2-1)&,{xivars,explist}];
+  integranddenor=MapThread[Which[Length@#1>2,#2(#1[[1]]^2-#1[[2]]),Length@#1==2,#2 #1[[1]]^2]&,{denor,xivars}],
+
+  xivars=OptionValue[Variable][#]&/@Range@(Length@denor-1);
+  measure=MapThread[{#1, 0, #2} &, {xivars,
+    Drop[FoldList[#1 - #2 &, 1, xivars],-1]}];
+  xipart=Times@@MapThread[#1^(#2-1)&,{xivars~Join~{1-Total@xivars},explist}];
+  integranddenor=MapThread[Which[Length@#1>2,#2(#1[[1]]^2-#1[[2]]),Length@#1==2,#2 #1[[1]]^2]&,{denor,xivars~Join~{1-Total@xivars}}]
+];
 gammapart=Gamma[Plus@@explist]/Times@@Gamma/@explist;
-integranddenor=MapThread[Which[Length@#1>2,#2(#1[[1]]^2-#1[[2]]),Length@#1==2,#2 #1[[1]]^2]&,{denor,xivars}];
 If[AllTrue[integranddenor,!MatchQ[#,Null]&],Null,Message[FeynmanParametrize::denor];Abort[]];
 Put[{measure,xipart,gammapart,integranddenor},LocalObject["FeynmanParametrization"]]
 ];
@@ -141,23 +149,24 @@ EliminateVarProduct[expr_,var_,d_]:=
 CheckDenorForm[denor_,dim_]:=If[NumberQ@Last[#]||!FreeQ[#,dim],#,#~Join~{1}]&/@denor;
 
 
-OneLoop[odenor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->True,FeynParaIN->{},DivideNumerators->False}]]:=
+OneLoop[odenor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->True,FeynParaIN->{},DivideNumerators->False,WithDiracDelta->False}]]:=
 Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, allfeynpara(*,sphere*)},
   (*Vector=DeleteDuplicates[Join[{var},exm,Vector]];*)
 
   If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor,dim]];
 
-  feyn=Get[FeynmanParametrize[denor,Variable->OptionValue[FeynParaVariable]]];
-  feynpara=feyn[[1,All,1]];(*Print[feynpara];*)
+  feyn=Get[FeynmanParametrize[denor,FilterRules[{opts},{FeynParaVariable,WithDiracDelta}]]];
+  feynpara=If[OptionValue[WithDiracDelta],feyn[[1,All,1]],feyn[[1,All,1]]~Join~{1-Total[feyn[[1,All,1]]]}] ;(*Print[feynpara];*)
   allfeynpara=feynpara~Join~OptionValue[FeynParaIN];
 
   (*sphere=(2\[Pi]^(dim/2))/Gamma[dim/2];*)
 
   If[OptionValue[DisplayFeynPara],Print[feyn],Null];
 
-  colist=FactorTerms[#,feynpara]&/@CoefficientList[Plus@@Last@feyn,var]//.{Total[feynpara]->1};
+  colist=FactorTerms[#,feynpara /. feynpara /; !OptionValue[WithDiracDelta] :> Drop[feynpara, -1]]&/@CoefficientList[Plus@@Last@feyn,var]//.{Total[feynpara]->1};
   If[Length[colist]<2,shift=0,shift=colist[[2]]/2];
   Delta=colist[[1]]-(shift)^2;
+  If[OptionValue[DisplayTempResults],Print[colist,"\n",feynpara]];
 
   newnor=nor/.Power[a_?((!Or@@ (Map[Function[x, !FreeQ[#, x]], allfeynpara])) && (!MatchQ[#, Dot[_, __]]) &),n_?EvenQ]:>SP3[a]^(n/2)/.{var->var-shift};
 
