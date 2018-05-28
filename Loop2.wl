@@ -52,17 +52,17 @@ If[OptionValue[NoDelta],1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-
 (*denor is either {k-l,1}=(k-l)^2 or {k,m^2,1}=k^2-m^2*)
 
 
-FeynmanParametrize[denor_,OptionsPattern[{Variable-> Global`x ,WithDiracDelta->False}]]:=Module[{xivars,measure,xipart,gammapart,integranddenor,explist},
+FeynmanParametrize[denor_,OptionsPattern[{FeynParaVariable-> Global`x ,WithDiracDelta->False}]]:=Module[{xivars,measure,xipart,gammapart,integranddenor,explist},
 If[ListQ@denor,Null,Message[FeynmanParametrize::listQ,denor];Abort[]];
 explist=Last/@denor;
 (*If[AllTrue[explist,NumberQ],,Message[FeynmanParametrize::numer]];*)
 If[OptionValue[WithDiracDelta],
-  xivars=OptionValue[Variable][#]&/@Range@Length@denor;
+  xivars=OptionValue[FeynParaVariable][#]&/@Range@Length@denor;
   measure=({#,0,1}&/@xivars);
   xipart=DiracDelta[Plus@@xivars-1] Times@@MapThread[#1^(#2-1)&,{xivars,explist}];
   integranddenor=MapThread[Which[Length@#1>2,#2(#1[[1]]^2-#1[[2]]),Length@#1==2,#2 #1[[1]]^2]&,{denor,xivars}],
 
-  xivars=OptionValue[Variable][#]&/@Range@(Length@denor-1);
+  xivars=OptionValue[FeynParaVariable][#]&/@Range@(Length@denor-1);
   measure=MapThread[{#1, 0, #2} &, {xivars,
     Drop[FoldList[#1 - #2 &, 1, xivars],-1]}];
   xipart=Times@@MapThread[#1^(#2-1)&,{xivars~Join~{1-Total@xivars},explist}];
@@ -235,7 +235,7 @@ Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
   feynpara1=oneloop[[1,1,All,1]];
 
   nor1=oneloop[[2]];
-  codenor=ReplaceAll[Total[feynpara1]->1][Coefficient[(First@#)^2,var2^2]]&/@Last[oneloop];
+  codenor=ReplaceAll[(temprep/;OptionValue[WithDiracDelta]:>Total[feynpara1]):>1][Coefficient[(First@#)^2,var2^2]]&/@Last[oneloop];
 
   If[OptionValue[DisplayOneLoop],Print["oneloop=",oneloop,"\n Denorminator coefficient=",codenor],Null];
 
