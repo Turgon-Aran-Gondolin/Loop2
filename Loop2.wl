@@ -156,6 +156,7 @@ Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, 
   (*Vector=DeleteDuplicates[Join[{var},exm,Vector]];*)
 
   If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor,dim]];
+  If[Length@denor<=1,Print["Denom number \[LessEqual] 1, scaleless integral. "];Abort[],Null];
 
   feyn=Get[FeynmanParametrize[denor,FilterRules[{opts},{FeynParaVariable,WithDiracDelta}]]];
   feynpara=If[OptionValue[WithDiracDelta],feyn[[1,All,1]],feyn[[1,All,1]]~Join~{1-Total[feyn[[1,All,1]]]}] ;(*Print[feynpara];*)
