@@ -5,6 +5,7 @@ BeginPackage["Loop2`"]
 
 OneLoop::usage="OneLoop[denor,nor,k,exm,dim], \n i.e. OneLoop[{{k-p},{k,m^2}},k2,k,p,d]";
 TwoLoop::usage="TwoLoop[denor1,denor2,nor,k1,k2,exm,dim], \n i.e. TwoLoop[{{k2-k1,1},{k2,2mE,1}},{{k1-p,1},{k1,2mE,2}},k1^4,k2,k1,p,d]";
+NLoop::usage
 LoopIntegrate::usage="LoopIntegrate[integrand,Assumptions->{}]";
 FeynmanParametrize::usage="";
 Ffeyn::usage="";
@@ -25,6 +26,7 @@ ExpandDValue::usage="";
 DivideNumerators::usage="";
 DisplayNumerators;
 ShowSecondLoopCommand::usage="";
+$FeynParaVarList;
 (*ScaleValue::usage="";*)
 (*FeynmanParametrize::numer="The last line of the input list is not numbers, please add the power of denorminators. ";*)
 
@@ -109,27 +111,27 @@ EliminateVarProduct[expr_,var_,d_]:=
 
 
 (* ::Code:: *)
-(*k.q (k.p\!\(\**)
-(*TagBox["*",*)
-(*"InactiveToken",*)
-(*BaseStyle->"Inactive",*)
-(*SyntaxForm->"*"]\)k.p\!\(\**)
-(*TagBox["*",*)
-(*"InactiveToken",*)
-(*BaseStyle->"Inactive",*)
-(*SyntaxForm->"*"]\)k.p)/.\!\(\**)
-(*TagBox[*)
-(*StyleBox[*)
-(*RowBox[{"Times", "[", *)
-(*RowBox[{*)
-(*RowBox[{"Dot", "[", *)
-(*RowBox[{"k", ",", "a_"}], "]"}], ",", *)
-(*RowBox[{*)
-(*RowBox[{"Inactive", "[", "Times", "]"}], "[", "b__", "]"}]}], "]"}],*)
-(*ShowSpecialCharacters->False,*)
-(*ShowStringCharacters->True,*)
-(*NumberMarks->True],*)
-(*FullForm]\):>Inactive[Times][Dot[k,a],b]*)
+  (*k.q (k.p\!\(\**)
+  (*TagBox["*",*)
+  (*"InactiveToken",*)
+  (*BaseStyle->"Inactive",*)
+  (*SyntaxForm->"*"]\)k.p\!\(\**)
+  (*TagBox["*",*)
+  (*"InactiveToken",*)
+  (*BaseStyle->"Inactive",*)
+  (*SyntaxForm->"*"]\)k.p)/.\!\(\**)
+  (*TagBox[*)
+  (*StyleBox[*)
+  (*RowBox[{"Times", "[", *)
+  (*RowBox[{*)
+  (*RowBox[{"Dot", "[", *)
+  (*RowBox[{"k", ",", "a_"}], "]"}], ",", *)
+  (*RowBox[{*)
+  (*RowBox[{"Inactive", "[", "Times", "]"}], "[", "b__", "]"}]}], "]"}],*)
+  (*ShowSpecialCharacters->False,*)
+  (*ShowStringCharacters->True,*)
+  (*NumberMarks->True],*)
+  (*FullForm]\):>Inactive[Times][Dot[k,a],b]*)
 
 
 (* ::Code:: *)
@@ -151,11 +153,20 @@ EliminateVarProduct[expr_,var_,d_]:=
 CheckDenorForm[denor_,dim_]:=If[NumberQ@Last[#]||!FreeQ[#,dim],#,#~Join~{1}]&/@denor;
 
 
-OneLoop[odenor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->True,FeynParaIN->{},DivideNumerators->False,WithDiracDelta->False}]]:=
+OneLoop[odenor_,nor_List,var_,exm_,dim_,rules:OptionsPattern[]]:=OneLoop[odenor,#,var,exm,dim,rules]&/@nor;
+
+
+Options[OneLoop]={(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->False,FeynParaIN->{},DivideNumerators->False,WithDiracDelta->False};
+
+OneLoop[odenor_,nor_?(!ListQ[#]&),var_,exm_,dim_,opts:OptionsPattern[{(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->False,FeynParaIN->{},DivideNumerators->False,WithDiracDelta->False}]]:=
 Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, allfeynpara(*,sphere*)},
   (*Vector=DeleteDuplicates[Join[{var},exm,Vector]];*)
 
   If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor,dim]];
+  denor=Flatten[(# //. {f___, {a_, d___, b_}, {a_, d___, c_},
+    e___} :> {f, {a, d, b + c}, e}) & /@
+      GatherBy[denor,
+        Which[Length@# == 3, #[[1 ;; 2]], Length@# == 2, #[[1]]] &], 1];
   If[Length@denor<=1,Print["Denom number \[LessEqual] 1, scaleless integral. "];Abort[],Null];
 
   feyn=Get[FeynmanParametrize[denor,FilterRules[{opts},{FeynParaVariable,WithDiracDelta}]]];
@@ -187,16 +198,16 @@ Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, 
 
   MapIndexed[Print["nor",2(First@#2-1),"=",#1]&,nnapart],Null];
 
+
   res=MapIndexed[#1 Ffeyn[Delta,dim,Total[Last/@denor],(First[#2]-1)]&,nnapart];
 
+
+  (*a/.a/;!OptionValue[FirstLoop]->Print[res];*)
+
   Which[OptionValue[FirstLoop],
-    Put[
-      {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@((Range@Length@nnapart-1))},
-      LocalObject["OneLoop"]],
+    {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@((Range@Length@nnapart-1))},
   OptionValue[SecondLoop],
-    Put[
-      {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],(First[#2]-1)]&,nnapart]},
-      LocalObject["OneLoop"]],
+    {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],(First[#2]-1)]&,nnapart]},
   True,
     {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](*+If[!MatchQ[OptionValue[ScaleValue],1],Normal@Series[OptionValue[ScaleValue],{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](dim-OptionValue[ExpandDValue])Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],0]*),(*OptionValue[ScaleValue]*) #]&[If[OptionValue[DivideNumerators],res Times@@feyn[[2;;-2]],Simplify[Total[res] Times@@feyn[[2;;-2]]]]],Sequence@@feyn[[1]]}]
   (*{shift,Delta,newnor}*)
@@ -231,7 +242,7 @@ Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
 
   If[FreeQ[denor1,var2],oneloop=OneLoop[denor1,nor,var1,exm~Join~{var2},dim];OneLoop[denor2,oneloop[[1]],var1,exm~Join~{var2},dim,FeynParaVariable->Global`y]~Join~oneloop[[2;;-1]],
 
-  oneloop=Get@OneLoop[denor1,nor,var1,exm~Join~{var2},dim,FirstLoop->True,FilterRules[{opts},{DisplayNumerators}]];
+  oneloop=OneLoop[denor1,nor,var1,exm~Join~{var2},dim,FirstLoop->True,FilterRules[{opts},{DisplayNumerators}]];
 
   feynpara1=oneloop[[1,1,All,1]];
 
@@ -242,9 +253,9 @@ Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
 
   denor=MapThread[Simplify[(First@#1)^2/#2]&,{Last[oneloop],codenor}];
 
-  If[OptionValue[ShowSecondLoopCommand],MapThread[Print["OneLoop["<>StringTrim[ToString[InputForm@{denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,exm,dim,FeynParaVariable->Global`y,SecondLoop->True,FeynParaIN->feynpara1}],"{"|"}"]<>"]"]&,{denor,Last[oneloop][[All,2]],codenor,nor1}],Null];
+  If[OptionValue[ShowSecondLoopCommand],MapThread[Print["OneLoop["<>StringTrim[ToString[InputForm@{denor2~Join~{{Simplify[Sqrt[#1],var2>0],#2}},#4/#3^#2,var2,exm,dim,FeynParaVariable->Global`y,SecondLoop->True,FeynParaIN->feynpara1}],"{"|"}"]<>"]"]&,{denor,Last[oneloop][[All,2]],codenor,nor1}],Null];
 
-  twoloop=MapThread[Get@OneLoop[denor2~Join~{{Sqrt[#1],#2}},#4/#3^#2,var2,exm,dim,FeynParaVariable->Global`y,SecondLoop->True,FeynParaIN->feynpara1,FilterRules[{opts},{DisplayNumerators(*,ScaleValue*)}]]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
+  twoloop=MapThread[OneLoop[denor2~Join~{{Simplify[Sqrt[#1],var2>0],#2}},#4/#3^#2,var2,exm,dim,FeynParaVariable->Global`y,SecondLoop->True,FeynParaIN->feynpara1,FilterRules[{opts},{DisplayNumerators(*,ScaleValue*)}]]&,{denor,Last[oneloop][[All,2]],codenor,nor1}];
 
   (*Print["oneloop=",oneloop,"\n codenor=",codenor,"\n denor=",denor];*)
   (*Print[nor1];*)
@@ -255,6 +266,35 @@ Module[{feynpara1,oneloop,nor1,res,codenor,denor,denor2,twoloop},
 
   {(If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],#])&[If[OptionValue[DivideNumerators],Flatten[twoloop[[All,-1]] Times@@@twoloop[[All,1,2;;-1]]] Times@@oneloop[[1,2;;-1]],Plus@@(Flatten[twoloop[[All,-1]]Times@@@twoloop[[All,1,2;;-1]]]) Times@@oneloop[[1,2;;-1]]]],Sequence@@oneloop[[1,1]],Sequence@@twoloop[[1,1,1]]}]
 ];
+
+$FeynParaVarList={Global`x,Global`y,Global`z,Global`r,Global`s,Global`t};
+
+NLoop[denor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{ExpandD->False,ExpandDOrder->-1,ExpandDValue->3}]]:=
+    Module[{denorlist,collist,reslist},
+      Vector=Union[var,{exm}//Flatten];
+
+      denorlist=Reap[Fold[
+        Complement[#1, Sow[Select[#1, Function[a, ! FreeQ[a, #2]]]]] &,
+        denor, var]] // Flatten[#, 2] &  ;
+
+      reslist=Reap[Fold[
+        Function[tmpresult, Sow[tmpresult[[1, 1]], #2[[2]]];
+        Print[#2[[2]], tmpresult[[1, 1]]]; tmpresult]@
+            OneLoop[#2[[1]]~Join~#1[[-1]], #1[[2]]*
+                Times @@ (#1[[1, 2 ;; 3]]), #2[[2]], exm, dim,
+              FeynParaVariable -> #2[[3]], {FirstLoop ->
+                True} /. {FirstLoop -> True} /; #2[[2]] == Last[var] ->
+                Sequence[FirstLoop -> False,
+                  FilterRules[{}, {ExpandD, ExpandDOrder,
+                    ExpandDValue}]]] &, {{{}, 1, 1}, nor, {}},
+        Transpose@{denorlist, var, Take[$FeynParaVarList, Length@var]}],
+        var[[1 ;; -2]]];
+
+      reslist[[1,1]]~Join~(reslist[[1,2;;-1]]~Join~(reslist[[-1]]// Flatten[#, 3] &))
+
+
+
+    ];
 
 
 LoopIntegrate[integrand_, asmp:OptionsPattern[{Assumptions->{}}]]:=Integrate@@(integrand~Join~FilterRules[{asmp},Options[Integrate]])
