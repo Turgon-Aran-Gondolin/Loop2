@@ -35,7 +35,7 @@ Begin["Private`"]
 
 
 (* ::Input:: *)
-(*1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n] (1/\[CapitalDelta])^(n-d/2-\[Beta])*)
+(*(Gamma[\[Beta]+d/2] Gamma[n-d/2-\[Beta]] (1/\[CapitalDelta])^(n-d/2-\[Beta]))/((4 \[Pi])^(d/2) Gamma[d/2] Gamma[n])*)
 
 
 (* ::DisplayFormula:: *)
@@ -48,7 +48,7 @@ SetAttributes[Dot,Orderless];
   c___]] := b Dot[a, c];*)
 
 Ffeyn[\[CapitalDelta]_,d_,n_,\[Beta]_,OptionsPattern[{NoDelta->False,Euclidean->True}]]:=
-If[OptionValue[NoDelta],1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n],1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n] (1/(\[CapitalDelta]/.\[CapitalDelta]/;(!OptionValue[Euclidean])->-\[CapitalDelta]))^(n-d/2-\[Beta])];
+If[OptionValue[NoDelta],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n] (1/((If[OptionValue[Euclidean],1,-1])\[CapitalDelta](*/.\[CapitalDelta]/;(!OptionValue[Euclidean])->-\[CapitalDelta]*)))^(n-d/2-\[Beta])];
 
 
 (*denor is either {k-l,1}=(k-l)^2 or {k,m^2,1}=k^2-m^2*)
@@ -111,27 +111,27 @@ EliminateVarProduct[expr_,var_,d_]:=
 
 
 (* ::Code:: *)
-  (*k.q (k.p\!\(\**)
-  (*TagBox["*",*)
-  (*"InactiveToken",*)
-  (*BaseStyle->"Inactive",*)
-  (*SyntaxForm->"*"]\)k.p\!\(\**)
-  (*TagBox["*",*)
-  (*"InactiveToken",*)
-  (*BaseStyle->"Inactive",*)
-  (*SyntaxForm->"*"]\)k.p)/.\!\(\**)
-  (*TagBox[*)
-  (*StyleBox[*)
-  (*RowBox[{"Times", "[", *)
-  (*RowBox[{*)
-  (*RowBox[{"Dot", "[", *)
-  (*RowBox[{"k", ",", "a_"}], "]"}], ",", *)
-  (*RowBox[{*)
-  (*RowBox[{"Inactive", "[", "Times", "]"}], "[", "b__", "]"}]}], "]"}],*)
-  (*ShowSpecialCharacters->False,*)
-  (*ShowStringCharacters->True,*)
-  (*NumberMarks->True],*)
-  (*FullForm]\):>Inactive[Times][Dot[k,a],b]*)
+(*k.q (k.p\!\(\**)
+(*TagBox["*",*)
+(*"InactiveToken",*)
+(*BaseStyle->"Inactive",*)
+(*SyntaxForm->"*"]\)k.p\!\(\**)
+(*TagBox["*",*)
+(*"InactiveToken",*)
+(*BaseStyle->"Inactive",*)
+(*SyntaxForm->"*"]\)k.p)/.\!\(\**)
+(*TagBox[*)
+(*StyleBox[*)
+(*RowBox[{"Times", "[", *)
+(*RowBox[{*)
+(*RowBox[{"Dot", "[", *)
+(*RowBox[{"k", ",", "a_"}], "]"}], ",", *)
+(*RowBox[{*)
+(*RowBox[{"Inactive", "[", "Times", "]"}], "[", "b__", "]"}]}], "]"}],*)
+(*ShowSpecialCharacters->False,*)
+(*ShowStringCharacters->True,*)
+(*NumberMarks->True],*)
+(*FullForm]\):>Inactive[Times][Dot[k,a],b]*)
 
 
 (* ::Code:: *)
@@ -161,7 +161,7 @@ Options[OneLoop]={(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->F
 OneLoop[odenor_,nor_?(!ListQ[#]&),var_,exm_,dim_,opts:OptionsPattern[{(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->False,FeynParaIN->{},DivideNumerators->False,WithDiracDelta->False,Euclidean->True}]]:=
 Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, allfeynpara(*,sphere*)},
   (*Vector=DeleteDuplicates[Join[{var},exm,Vector]];*)
-
+  (*If[OptionValue[Euclidean->False],Set]*)
   If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor,dim]];
   denor=Flatten[(# //. {f___, {a_, d___, b_}, {a_, d___, c_},
     e___} :> {f, {a, d, b + c}, e}) & /@
@@ -205,9 +205,9 @@ Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, 
   (*a/.a/;!OptionValue[FirstLoop]->Print[res];*)
 
   Which[OptionValue[FirstLoop],
-    {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@((Range@Length@nnapart-1))},
+    {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor,FilterRules[{opts},{Euclidean}]],(First[#2]-1),NoDelta->True]&,nnapart],{Sqrt[Delta],Total[Last/@denor]-dim/2-#}&/@((Range@Length@nnapart-1))},
   OptionValue[SecondLoop],
-    {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor],(First[#2]-1)]&,nnapart]},
+    {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor,FilterRules[{opts},{Euclidean}]],(First[#2]-1)]&,nnapart]},
   True,
     {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](*+If[!MatchQ[OptionValue[ScaleValue],1],Normal@Series[OptionValue[ScaleValue],{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](dim-OptionValue[ExpandDValue])Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],0]*),(*OptionValue[ScaleValue]*) #]&[If[OptionValue[DivideNumerators],res Times@@feyn[[2;;-2]],Simplify[Total[res] Times@@feyn[[2;;-2]]]]],Sequence@@feyn[[1]]}]
   (*{shift,Delta,newnor}*)
@@ -298,6 +298,8 @@ NLoop[denor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{ExpandD->False,ExpandDOrde
 
 
 LoopIntegrate[integrand_, asmp:OptionsPattern[{Assumptions->{}}]]:=Integrate@@(integrand~Join~FilterRules[{asmp},Options[Integrate]])
+
+
 
 (* ::Code:: *)
 (*integrand=TwoLoop[{{k2-k1,1},{k2,2 m \[CapitalEpsilon],1}},{{k1-p,1},{k1,2m \[CapitalEpsilon],2}},k1^4,k2,k1,d]*)
