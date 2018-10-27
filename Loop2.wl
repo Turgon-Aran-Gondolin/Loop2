@@ -29,6 +29,8 @@ ShowSecondLoopCommand::usage="";
 $FeynParaVarList;
 (*ScaleValue::usage="";*)
 (*FeynmanParametrize::numer="The last line of the input list is not numbers, please add the power of denorminators. ";*)
+Euclidean;
+FeynParaVariable;
 
 
 Begin["Private`"]
@@ -161,7 +163,7 @@ Options[OneLoop]={(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->F
 OneLoop[odenor_,nor_?(!ListQ[#]&),var_,exm_,dim_,opts:OptionsPattern[{(*ScaleValue->1,*)DisplayFeynPara->False,DisplayTempResults->False,FirstLoop->False,SecondLoop->False,FeynParaVariable->Global`x,ExpandD->False,ExpandDOrder->-1,ExpandDValue->3,DisplayNumerators->False,FeynParaIN->{},DivideNumerators->False,WithDiracDelta->False,Euclidean->True}]]:=
 Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, allfeynpara(*,sphere*)},
   (*Vector=DeleteDuplicates[Join[{var},exm,Vector]];*)
-  (*If[OptionValue[Euclidean->False],Set]*)
+  (*If[OptionValue[Euclidean]\[Equal]False,SetOptions[OneLoop,ExpandDValue\[Rule]4],Null];*)
   If[OptionValue[SecondLoop],denor=odenor,denor=CheckDenorForm[odenor,dim]];
   denor=Flatten[(# //. {f___, {a_, d___, b_}, {a_, d___, c_},
     e___} :> {f, {a, d, b + c}, e}) & /@
@@ -209,7 +211,7 @@ Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, 
   OptionValue[SecondLoop],
     {Drop[feyn,-1],(*sphere *)MapIndexed[#1 Ffeyn[Delta,dim,Total[Last@#&/@denor,FilterRules[{opts},{Euclidean}]],(First[#2]-1)]&,nnapart]},
   True,
-    {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](*+If[!MatchQ[OptionValue[ScaleValue],1],Normal@Series[OptionValue[ScaleValue],{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](dim-OptionValue[ExpandDValue])Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],0]*),(*OptionValue[ScaleValue]*) #]&[If[OptionValue[DivideNumerators],res Times@@feyn[[2;;-2]],Simplify[Total[res] Times@@feyn[[2;;-2]]]]],Sequence@@feyn[[1]]}]
+    {If[OptionValue[ExpandD],Normal@Series[#,{dim,OptionValue[ExpandDValue]/.{OptionValue[ExpandDValue]/;(!OptionValue[Euclidean]):>4},OptionValue[ExpandDOrder]}](*+If[!MatchQ[OptionValue[ScaleValue],1],Normal@Series[OptionValue[ScaleValue],{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}](dim-OptionValue[ExpandDValue])Normal@Series[#,{dim,OptionValue[ExpandDValue],OptionValue[ExpandDOrder]}],0]*),(*OptionValue[ScaleValue]*) #]&[If[OptionValue[DivideNumerators],res Times@@feyn[[2;;-2]],Simplify[Total[res] Times@@feyn[[2;;-2]]]]],Sequence@@feyn[[1]]}]
   (*{shift,Delta,newnor}*)
 ];
 
