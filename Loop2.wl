@@ -96,7 +96,7 @@ AlphaParameterize[denor_,OptionsPattern[{ParaVariable-> Global`\[Alpha]}]]:=Modu
   {coe, intg, measure}
 ];
 
-GaussianIntegral[alpha_,v_,d_]:=(\[Pi]/alpha)^(d/2)Exp[-I v^2/alpha+I d \[Pi]/4];
+GaussianIntegral[alpha_,v_,d_]:=(2\[Pi])^(-d)(\[Pi]/alpha)^(d/2)Exp[-I v^2/alpha+I d \[Pi]/4];
 
 CompleteTheSquare[expr_, Vars : {__Symbol}] := Module[{array, A, B, Cc, s, vars, sVars},
   vars = Intersection[Vars, Variables[expr]];
