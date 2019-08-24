@@ -8,7 +8,7 @@ OneLoop[denor,nor,k,exm,dim],
 i.e. 
 
 $$
-\int\mathrm{d}^dk\frac{k2}{(\bm{k}-\bm{p})^2(\bm{k}^2-m^2)}
+\int\mathrm{d}^dk\frac{k2}{(\mathbf{k}-\mathbf{p})^2(\mathbf{k}^2-m^2)}
 $$
 
 ```
