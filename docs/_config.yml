@@ -3,4 +3,4 @@ theme: jekyll-theme-cayman
 # Build settings
 markdown: kramdown
 kramdown:
-    math_engine: katex
+    math_engine: mathjax
