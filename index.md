@@ -7,9 +7,10 @@ OneLoop[denor,nor,k,exm,dim],
 ```
 i.e. 
 
-$$
+<!-- $$
 \int\mathrm{d}^dk\frac{k2}{(\mathbf{k}-\mathbf{p})^2(\mathbf{k}^2-m^2)}
-$$
+$$ -->
+$$1+1$$
 
 ```
 OneLoop[{{k-p},{k,m^2}},k2,k,p,d]
