@@ -4,8 +4,8 @@
 
 layout: default
 ---
-# Loop2, A Mathematica Package for Textbook-Level Loop Calculation
-
+<!-- # Loop2, A Mathematica Package for Textbook-Level Loop Calculation -->
+This package is default to operate under 3-dimensional space, while the time component is integrated out. 
 ## Usage
 - One loop calculation
 {% raw %}
