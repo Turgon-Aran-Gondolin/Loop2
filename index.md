@@ -38,3 +38,5 @@ TwoLoop[denor1,denor2,nor,k1,k2,exm,dim], \n i.e. TwoLoop[{{k2-k1,1},{k2,2mE,1}}
 LoopIntegrate[integrand,Assumptions->{}]
 ```
 {% endraw %}
+
+## Options
