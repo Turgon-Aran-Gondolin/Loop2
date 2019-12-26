@@ -7,6 +7,9 @@ L2OneLoop::usage="L2OneLoop[denor,nor,k,exm,dim], \n i.e. L2OneLoop[{{k-p},{k,m^
 L2TwoLoop::usage="L2TwoLoop[denor1,denor2,nor,k1,k2,exm,dim], \n i.e. L2TwoLoop[{{k2-k1,1},{k2,2mE,1}},{{k1-p,1},{k1,2mE,2}},k1^4,k2,k1,p,d]";
 NLoop::usage
 L2LoopIntegrate::usage="L2LoopIntegrate[integrand,Assumptions->{}]";
+ResSolve::usage;
+ResSolve::condfail="ResSolve returns empty list, possible non-sufficient conditions. ";
+SphericalMeasurement::usage;
 FeynmanParameterize::usage="";
 AlphaParameterize::usage="";
 Ffeyn::usage="";
@@ -296,6 +299,17 @@ NLoop[denor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{ExpandD->False,ExpandDOrde
 
 
     ];
+
+
+ResSolve[bIntgV_,l0_,s:OptionsPattern[{\[Epsilon]Value->Global`\[Epsilon],Assumptions->($Assumptions),Plane->1}]]:=
+	If[#=={},Message[ResSolve::condfail],#]&@MapAt[OptionValue[Plane] #&,Map[(2\[Pi] I Residue[bIntgV,{l0,l0/.#}]&),
+		Select[#,I==Assuming[OptionValue[\[Epsilon]Value]>0&&OptionValue[Assumptions],
+		-I OptionValue[Plane] Simplify@Sign[I SeriesCoefficient[l0/.#,{OptionValue[\[Epsilon]Value],0,1}]]]&]&@DeleteDuplicates[Solve[Denominator[bIntgV]==0,l0]]],
+		{All,2}];
+
+
+SphericalMeasurement[l_,OptionsPattern[{D->Global`d}]]:=Module[{d=OptionValue[D]},(((l^(d-1) ) (2 \[Pi]^(d/2)))/((2 \[Pi])^d Gamma[d/2]))]
+SphericalMeasurement[l_,\[Theta]_,OptionsPattern[{D->Global`d}]]:=Module[{d=OptionValue[D]},(((l^(d-1) Sin[\[Theta]]^(d-2)) (2 \[Pi]^((d-1)/2)))/((2 \[Pi])^d Gamma[(d-1)/2]))]
 
 
 L2LoopIntegrate[integrand_, asmp:OptionsPattern[{Assumptions->{}}]]:=Integrate@@(integrand~Join~FilterRules[{asmp},Options[Integrate]])
