@@ -9,9 +9,13 @@ NLoop::usage
 L2LoopIntegrate::usage="L2LoopIntegrate[integrand,Assumptions->{}]";
 ResSolve::usage;
 ResSolve::condfail="ResSolve returns empty list, possible non-sufficient conditions. ";
+ResSolve::voidinput="Your input is an empty list, check again. ";
+ResSolve::listinput="Your input is a list, ResSolve will process it individually, but you should check if it's what you want. ";
 SphericalMeasurement::usage;
 FeynmanParameterize::usage="";
 AlphaParameterize::usage="";
+EikonalParameterize::usage="";
+FPFormat;
 Ffeyn::usage="";
 SP3::usage="";
 ExpandSP;
@@ -21,6 +25,7 @@ FeynmanParameterize::listQ="Variable \"`1`\" is not a list. ";
 FeynmanParameterize::denor="Denorminator list is too short. ";
 AlphaParameterize::listQ="Variable \"`1`\" is not a list. ";
 GaussianIntegral::usage="GaussianIntegral[alpha,v,d] gives Gaussian integral Exp[i(\[Alpha]k^2-2v\[CenterDot]k)] in d dimension Euclidean space. ";
+ExpandDot::usage;
 ShiftVar::usage;
 ShiftVar::CTSIC="Complete the square operation results in incomplete square. ";
 WithDiracDelta::usage="";
@@ -64,6 +69,19 @@ Ffeyn[\[CapitalDelta]_,d_,n_,\[Beta]_,OptionsPattern[{NoDelta->False,Euclidean->
 If[OptionValue[NoDelta],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n] (1/((If[OptionValue[Euclidean],1,-1])\[CapitalDelta](*/.\[CapitalDelta]/;(!OptionValue[Euclidean])->-\[CapitalDelta]*)))^(n-d/2-\[Beta])];
 
 
+ExpandDot[expr_,vec_?(!ListQ@#&)]:=ExpandDot[expr,{vec}];
+ExpandDot[expr_,vec_List]:=expr/. a_Dot:>Distribute[a,Plus]//. (a___).(d_ b_/;FreeQ[d,Alternatives@@vec]).(c___):>d a.b.c;
+
+SortDot[expr_]:=expr/.Dot[a_,b_]:>Dot[Sequence@@Sort[{a,b}]];
+
+OrderlessDelete[expr_]:=DeleteDuplicatesBy[expr,Sort[#]&];
+
+PermutateDotProduct[dotvars_,4]:=SortDot[Plus@@Map[Times@@#&,OrderlessDelete[DeleteCases[Permutations[Map[Dot@@#&,OrderlessDelete[Permutations[dotvars,{2}]]],{2}],_?(Length[Variables[#/.Dot[a_,b_]:>{a,b}]]<4&)]]]];
+
+RemoveDot[expr_,l_,d_]:=RemoveDot[expr,l,D->d];
+RemoveDot[expr_,l_,OptionsPattern[{D->Global`d}]]:=Plus@@(Block[{dotlist=Cases[#,Dot[l,a_],{0,Infinity}],dotvars=#/.Dot[l,a_]:>a},Print["Dimension set at ", OptionValue[D]];If[OddQ[Length@dotlist],0,Switch[Length@dotlist,0,#,2,1/OptionValue[D] l^2 Times@@dotvars,4,1/(OptionValue[D](OptionValue[D]+2)) l^4 PermutateDotProduct[dotvars]]]]&/@List@@Expand[expr/. (a_).l:>l.a]);
+
+
 (*denor is either {k-l,1}=(k-l)^2 or {k,m^2,1}=k^2-m^2*)
 
 
@@ -85,7 +103,174 @@ If[OptionValue[WithDiracDelta],
 ];
 gammapart=Gamma[Plus@@explist]/Times@@Gamma/@explist;
 If[AllTrue[integranddenor,!MatchQ[#,Null]&],Null,Message[FeynmanParameterize::denor];Abort[]];
-{measure,xipart,gammapart,integranddenor}
+{measure,xipart,gammapart,{integranddenor,2Total[denor[[All,-1]]]}}
+];
+
+
+(* ::Code:: *)
+(*Image[CompressedData["*)
+(*1:eJztnQeQFMXbh1EUAwZQyzKhQqkoYoEEA5gFzAEQDIgKCogiCpizmANmUQFz*)
+(*RDFhzmJExKwYMWPOOdIfT/+/vurr65npmZ2N9z5VA3d7O7uzOzPdb/i9b7ce*)
+(*fHCfofM3adJkzMLz/ukz6IjNR48edFTfFvN+6TdyzPBhI4fst83IQ4cMGzJ6*)
+(*g8FN5z3Ya97WdN7zF5j3vxIEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAE*)
+(*QRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAE*)
+(*QRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRCEMvPJJ5+oSy65pNyHIQiCIAhC*)
+(*Gbj11lvV5Zdfrtq3b1/uQxEEoQC++eabch9C2fj666/L+v7//fdfqscFIQ/y*)
+(*vr6+/PJLsQUEoQL4+eef1WeffRa7zZ07t8F+l112mXruuefKcMRKnXrqqapJ*)
+(*kyZq4403VrvttluDbdddd1U77rij6t69u1piiSX0c9mGDBmS2zG89dZbaty4*)
+(*cbm9Xig33HCDOuCAA9R2222n+vXrpz766CP9+P3336+OP/54deGFF+rjmjNn*)
+(*TsmPTSgNTz/9tOrYsaO+phdccEHvPcDWv3//umt/gw02UG+88Yb39f7991/1*)
+(*8MMP67Egiueff16deeaZ6q677lITJ06s97eZM2dm/ixiCwgu+FkjRoxQ06ZN*)
+(*K/ehNCpeffVVdd5556nFFltMtWnTRo0fP15NmjRJP7bPPvuo+eefv26+MTzy*)
+(*yCPq3HPPLdMRK/Xrr7+qtm3bqm7duulxLA7smOnTp6utt95aLbnkkuqPP/7I*)
+(*7ThuuukmHecsBr/88ovaf//91ZVXXqnfB2bPnq3uvffeuudMmDBBLb/88jrf*)
+(*eumll9bb/+qrry7KcQmVA/N7ixYtIv/OvYEdsNNOOyW+1s0336w6dOigrzsf*)
+(*ffv2VVOnTlV//vmnuv766+v97Z133qn3O2P5+++/790+/fTTes8VW0Aw/PXX*)
+(*X+rYY4/Vc1DLli3VPffcU+5DapSsv/76+n53Yc5/4okn6n7/+++/1ZZbbqn+*)
+(*+eefXN8f+yINL730kmrWrJk67rjjgvc5//zz1eTJk9MeWizYGFHjZyFgB3Cs*)
+(*Bx10kFprrbX0Y7fffnsD24dYwDLLLKO+/fbbeo8Xy0YRKgd8/xBb4JBDDgl6*)
+(*vdVXX13n7308/vjjeoxYeuml1Z133qkfY+zmGrXHB7jvvvvUxRdf7N1cG1Vs*)
+(*AcHHcsstJ7ZAmcDH2GWXXRo8zhxz1VVX1f2OX3ryySfn/v6Ma2khdkHcgnEq*)
+(*FHzpPCFX4vpJhfLVV1+ppZZaSscwPv/8c/Xaa6/px2fNmqVmzJhR97zffvtN*)
+(*5z3Y1ltvvTqbhFiIGycQao+8bYGTTjpJ591cuP9ffPFF/fOTTz6p7VN49tln*)
+(*dd7h4IMPznD0/0NsAcGH2ALlI8oWgKeeeqru56FDh+rcoQu6AhMrIHbw8ccf*)
+(*p3r/LLYAc962226rVlxxxQZ+cVbIP7gxzzjeffddbzylEC666CLVs2dP79/Q*)
+(*C5CvJS9w2GGH6bGU7+Hss89WnTp1UiNHjtQxhQ8//DD1+6KBIA5c7WAz3X33*)
+(*3eU+jKKTty1ADH+++eZrkBPErpwyZYrO36IZoA7QcMQRR6hXXnlFff/996mP*)
+(*/6GHHlJHHXWUjmtxzb/55pupX0OoTcQWKB9xtoDNqquuqnOGNrfddpt69NFH*)
+(*9WsQN0BfhO9wwQUXBL9/FlsAyE1y3aAVLJRzzjlHXXvttXpsY251x8QoWrVq*)
+(*lWvOpEePHrGxF+IF2CwuaLyz2kTYP/iEP/zwQ6b9Kw20R1yHtUzetgBsuOGG*)
+(*6rTTTmvwONf3jz/+2ODx3XffXcf9iWUJQl6ILVA+QmwB/H18cBfmUHxTtHlo*)
+(*kID4AXZ/KFltAUADjT+Db5EV4vC2PbHJJptovbaBOEeUr0k+/4svvsj83jbM*)
+(*8WjDsa1KBe/J+cefrhWYu7bZZpuarqcohi1w1lln1elTQsD+zFs7JAhiC5SP*)
+(*EFuAcdU3ThBbxpcm1uerP7RhfKJOgTy7vXXp0qXBYw8++GDw8ROrXGihhfRx*)
+(*ZAHNwSKLLKK1iM8884y2e2zwe+xcvc1GG22k6zHy4IEHHtB2jc8HKxYHHnig*)
+(*rkW06dq1a109mtnQMKy00kqxm7sP36nJNZcaYs4hGvpqJW9bgNw/8bymTZtq*)
+(*ba4glIvGaAv89NNPun6C2Bz3rL1xX1LXt+mmm2rNPGOxG5/PixBbgNz0mmuu*)
+(*6f0b+YA+ffoEvRf+Ntpje9tiiy0aPIaNEQpzd7t27TLX0mHDEN9Ax8T4afRR*)
+(*9t+joLYxr1wnNg167lLB+L/yyit7ay3JN9CrwczrJuYTx8ILL6yfS61jIXXn*)
+(*eTF48GBdl1mL5GkLvP766zrej49Pbczo0aMbPId7y5ebEoS8aYy2ANAnBp8a*)
+(*7U4UaPO4V0PG4yyE2AKMLb4cAfTu3buBb5mGQnIEgO0wfPjwTPuihTJ1UkBc*)
+(*YNlll9U/M0dSr7Dnnnvqc+Bj7bXXzk27GKrbyAv6FcWdN/zDLLYAGsZKgDku*)
+(*yn6tdvKyBciP2VoR9KmMxW79KjEryQcIpYD50B6TGxPk6fBr43p/cR/GreNR*)
+(*SH9QYsI777xz4vPo8eMeIz4zdceFxMkLsQXQ+BELpt45C4yVth1BP5Q99thD*)
+(*/4wWgV7L1FbT68eF77x169aJuZEQfv/9d60VGDt2bMGvFQJxnsUXX1y/bxRv*)
+(*v/12JlvgyCOPzPNQC4K4Wi32MMvDFuCexVay/RBqVek9Zut98ri+BSGJM844*)
+(*Q9eoNm/eXPexYSyM6pdZywwYMEDPaVnuO2qDb7nlFm0rpKknI15PryfyDyus*)
+(*sIL+2e4n4HLooYfqGmMb5mL2LWS8yGoLMG5tv/32BWn3+Dz05iGvjfYczYDt*)
+(*53MtbrbZZt59+Rt5nDxAs8DYXSp7mJwI91scpbAF6ItArTraTDdXEdIfNwnq*)
+(*4IxtV0sUagtgO1MXZNcMG6hLNVoL4gHUFVaSfScI1Qj9Yg4//HCdCyb/GtWb*)
+(*hnGwc+fOupdcGoiDopkm1s3cbtsCjOV55viIn48aNarB41nqi22y2gLMw75+*)
+(*B1Fcd911kX/j+8O2cBkzZow+Z7781emnn57b3G3WWcjSGyAL2FC8ZxylsAWI*)
+(*T2D/sx8/uyT1x03i5Zdf1utS1Jpvm0dcIKqGFDvB6HVuvPFG3Utw7733Luh4*)
+(*BaExQ/x10KBBdbk3/Fd0VeQEfBCf5u9pevIyxu277756v80337xenu+9997L*)
+(*dQzktZhD4uLKWUijEzQQT0qjFURDlqUfHz190Ay4fX35nul1lLQmQiisN1TK*)
+(*OYu8TtL6UqXKEZBribIFIK4/bhJ8n8Qcs1xjlUwxagqjQMPi9hoWBCEc+vAw*)
+(*P9t+M/EBYvI+sNMHDhwY7MvjK9G7CxjzevXqVbeeLrHVYmgN0RrxGcoJekuf*)
+(*1tnHd999p+vmqDnMutaw73wQEyBOkhfMzfQ1KAXM8fRvdmsnfc8rlV4gzhaI*)
+(*6o8bCnEF+kjVEjvssIP+vqNsUWqU8lifk/sHfSwxs1L2vRCEWoIaeTS5dt9O*)
+(*8rTco+78Qr0gMYQ0PbyoQyeHT24Av/WKK67QjzOmkjvIox+fD/oLEjcsB8Q6*)
+(*+E6J3TPnuBt2CnkM8gfMH9S4831TK5UXfN9m/cA8QLvlq2UsFqxzRD+AJIpt*)
+(*C6A1Mdd7nC0Q1R83FPzaUNux0iF2yJphxDrMNfPCCy/Uew4aGGL6/B1NNjqi*)
+(*rLUuxDKJWTFu1UpfSkGoBIjtrbvuuvUeI0bKuvT0t4/Dp/MB4g5uHQG+M2vz*)
+(*YdcXg7xi42kh1kv+Pu2GbZQXeX92crKM28aWKza8D+sZJVEsW4DcBHWa2JT4*)
+(*mlyncbYARPXHDYEax7322ivTvpUG9pB7bbu5HnSo7nMK6RNMTrCQOiVBqGbQ*)
+(*lDNvJ23U/UfVnrvQk4ZeveimbY4++mg1ffr02H3JNyRpvWzQT9OX130vofIg*)
+(*p8tcWKoefay3QH+nJIphC+DX0r+BWk0DeskkWyCuP25SHxzur2LFyASh1kFr*)
+(*VW0b9XBptlKCNtes32PDuEyc3+2799hjj2ntOut+owPIEiON6lOIX1jrWzmv*)
+(*sbSQy1hggQWK1lfSBY0Jcd8kimELnHDCCVpDY8M8HmcLJPXHTeqDgw3t02JQ*)
+(*g3LNNdfIlrBha+WxpR2f47Y87uW8xppa54MPPqj5rVSg6yMH4NbmE2smD4cm*)
+(*PmmbMGFCbsdT7u+91re01wY9f9ZZZ53czm8S1EaUyxYglub2VoyzBZL6484N*)
+(*qLtg3UfWjXAhHhG6lfuakq1yN6G2Cc0R0MckKUeA5tzuy0dfoKx98oTagvWC*)
+(*mQfJn5cKdPmub+6jGLYAvZzc/ESULZDUHze0Dw45GMkRCELjpFK0Luii0PES*)
+(*90fTQ63fsGHDyn1YmbHzvHFkrd8rJVwjhWgr8/iMzLHMg6zvVCrQoZdLO8j6*)
+(*z2jb7e8dHTz72fU2If1xQ/vgoBuUXjmNB+JA9POmlthe743+tvRU7Nu3r+65*)
+(*yDVHjlYoHdS+4YeQ7+P732qrrSL9bMYJnkN/kSx1W8xV9O6jbor4eznX06Cm*)
+(*kDy/u5ZrSHy2mNDTlVhG3DbXE3tlLeGk/jQG9P7jxo2LfQ42Euvk8Z2w7lHU*)
+(*NUEPYJ5Dj4CePXs2eB3Oedxn8WmosQPQaRRiC4R8xiTQtfHZ3LqwYjJ58mT9*)
+(*vSdRrDoCcmXE0/DruU9NHQFjNDZAaH9cCOmDw/2WR88dobKI8vfom4E+JG6N*)
+(*LMY3rr3u3bsX6/AaHfackeSLU/vNPR+3zjx5PfquZJ3D0c7TV5+4IraEXf+V*)
+(*d0/eaoXxll56+Fht2rRR48ePV5MmTdKPUZdPHxpXp0gvRPzJNPD9u/36XLBL*)
+(*sOHj1kbivbluOD4f1E+SA+c52ApoKyZOnKhzM/zOvOKC7xBq18QR8hnjoGcM*)
+(*PRCS+v7kCfUsnOMkrWKx+wsQI6D3NuMG9bTUxprxJKQ/bmgfHDS72LFCbcE9*)
+(*HwUxu1VWWSVR28fYQZ5OKAzuXWIs2OboMtGcYrdHwf0YYgt07Ngx8zHhB6Ix*)
+(*orcfPpdN3j15qx3W38MXc2HOt30t5inWsclin3EuknrJkwMOsQXiev8zp/Ac*)
+(*bEGXPn361Dt2roM8681DPmMU2Cml6jdo4Hxif2ETxFHp6xSG9MHBF0CbWcg6*)
+(*mkJpCfUvk2I9rEXRsmXLguqqKyXXXOmQq8MmZ506+lrxs73WpUuxbQHqs01N*)
+(*Fz047b6lxerJW83gL7mabuBc2rVx1EHiR2eBcx61HpMhD1sAH5fnUIPpMmXK*)
+(*lHpr/uBPRPVtykLIZ/RBTKRca/wSG8V+j6PSbQFI6oND3w5sgdAxnXFDdL3F*)
+(*J0prk8a/DMn7oNNmrZbQHjAG6k3p0YKGnBijATulVH1AKhXsbl/ND7W/PXr0*)
+(*CHqNvG0Bjske47H/yN/SJ544MTX6UOyevNVKlC0A9lw5dOhQ73qA3Lf2erKz*)
+(*Z89uEHch9uuLPdgU2xZgHLCvk06dOsX2DmScsnVsSYR8Rh9crxwz402pId9C*)
+(*rV4c1WALJEE9LvqkEDjvrClaDbFDs64l/o5PY8OaqIx32HyseWXOY6HrE/hg*)
+(*fGXMTdOPM0prE+df8jtaUrORz7R/j9I1H3PMManXs+B+njp1qh5XbDsfm9LW*)
+(*szYmiL2ieyfvgn9ITZB9rzP2nnLKKUGvlZctQE0na/ORq2XOokbKxtd7u9g9*)
+(*eauROFvAhji2m1vmXma9F9ZLZu151gPm/DIGubRq1So2v1BsW8CG/EBUTJ5r*)
+(*nXUOuFZmzpypNaih80LSZ/TB2nscczlqLrB16P8XN34bfT8bepI4+P7RIPBc*)
+(*9NuVAn26QjTInGfyRuUeH0LXOEf31LZtW9WtW7fEOZjPRnyEXBZ9T7nO84T3*)
+(*55wPHjw41X5RWpso/xJNCPe32dAU279HxaTxC6k5SQM1X+RQ0a6ZcQefglhF*)
+(*1nUxqh3WZbVjif369dPXqoHzn9Q/15CHLcA8jwbazv+F2LrSk7chIbYAuWU0*)
+(*/i7Y9HP/fw1jE8NDg+hbj5neseR2oyilLUCuCA27D64P46uQ/+e4QsfNpM/o*)
+(*Y8SIEWq11VZLtU+ecG9TU+DC2I6eirnD2AJo9LAN3Pg518CcOXN0Ly3zXHK0*)
+(*1AjkvbZ1WojXYO+E9HPEri2GvjDN+uNp1zinB2OzZs20fxYK/pDvnBcKtiW2*)
+(*ILGkNPi0NqH+ZUiOAD8lSnMcBflRkweg5sWsGYYtgk9M/UFjg89MrMbOtdEf*)
+(*jVo5Qxr9cx62ADEK/Dri0awXxxxPr/4QStXjtVoIsQUY53194GfNmqXnATSa*)
+(*9ISJg3Map90qpS1Av5rhw4d7/0Z/XGIgjJfMI+61je6dscVH0meM2of4Vrng*)
+(*eFnzx4V4KufEtzE32fYAdmDUc9l8PYNLBT0FouZRF7SxxagxIl4fSto1zoF5*)
+(*jjkYPzaUPHuY2nDsaewS8GltQv3LJFuA13D14y6sj+H6+fSvQmM0bdo0Pb/Y*)
+(*+ULqfvBHy1mrXg7IJ2KnGsjHYIdmvWfysAXoP8L1Rj2Y1AUURogtQC6Q79wH*)
+(*cwn9IJLOAXHMOM16KW0B8t5RWiT6YOADMN/RC8P1n+hTMGPGDO++SZ/RBd9v*)
+(*0UUX1baJDX4I8Uzip6Xwq4mLl2v96WJCHnGNNdYIsv+J/RIjiYMccRZNeRpb*)
+(*IM0a5wbuPY6d2F3WdYld+M7w79OOrfjMrVu3TrWPT2sT6l/G2QK8LrGquHNG*)
+(*PIK4hO8+Y65nPLDBBu7du7fO7TU2OnTooOO+Bmwl5g9IGwuCPGwBauJ9OjYb*)
+(*NINpxuXGSogtwJzlyxEAvfKo10uC+HLcOFVKWwD/yaeZw7Y0/X4YA+lN0L9/*)
+(*/3rPiRsbkz6jC3YUx0vcxcD7m5ppHvdpL/IGW4/YAPr5WoFxnHwzccMQ0Imj*)
+(*DfHBWELsBh8RfTvXTpp8cRpbIGp/d41zF/Qm3EOFaqOZG8n/Yn+gl+FaRLsX*)
+(*CnMn+tG0edgsWhvAF/TBNU1sizyVvd6b6fuKnU28BS1AWo1DY60x4dqipgOY*)
+(*E9DjsjYI2vEs67HlYQvQyxxtlw12mp2rJdeDBkeIp2vXrrFzsAGNkl0vYMAO*)
+(*SOqdi12OrxA3j+ZhCzBm8Rzi+3HgA/r67zIfmmsd0EIa+x/NALFY1gzw1SaF*)
+(*fEYX4rTude720EP3VgqblrGbOSeNDrySIbaTZBPaoDP3xc2xJfCHzHzIuWA9*)
+(*yTR2UyG2QNQa5z6Y4+hx6uuvEYKJL9j78x3aYzXzdZKmgtfAH3eJ2zeL1iYO*)
+(*zlvIem9s5DqFZMj1obPCnsJPQj9ATJFx0c5phZKHLUBueuDAgbqGhTV96WNr*)
+(*n0/JGSTDvUJvRvKQ6EH4Oc62o1evu8Yi0LMw6V5CE0ztTxyF2gLE2al7bN68*)
+(*uercubOuKzH1pD64xtw4JK/BeIo/hB2AD2jmRh4nP4auGJ1Kls/own3FWGSD*)
+(*jpDaVwNxAWJxpQC/N0uPhEqD78+OZYaA9tjNBzGOYAfY8xf5fJ++woCWhOfb*)
+(*W5cuXRo8xvq9SUStcR4Hvi59uuPG1yjwlak9pD6IcR872NVacD+4fpj7GozN*)
+(*+Nvu/RW3bxatjVB68ImozTZzLHGgNHEjm7xqCrmuyN+5eR5iRrwHtQ5CfmB3*)
+(*jRo1qsHjIfYgNmScPw95xAXSQG22r6Yf/548s88/Zr6nhslHyGe0YZzHDrN7*)
+(*HgB2GXlOA7ZAUi2fUDjoR9z+CWb9SPSiBuo+4rRo2CF2TJqNOKb7WFLv67kR*)
+(*a5wnwfzbrl27IFvDhe+AmiDudT6HL2cf52dhS48dO1bn6lq0aKFr80P3Tau1*)
+(*EaqfYvcdRHPF/IRmSMgPUzuYVsvGnErMMCn2XGpbAA1g2tgtfQfwm4lF2YR+*)
+(*RrTJJjfB6/i0APihthYGXVNen1mIhvoRVw92xx136HpEm/bt2+scNNq+UH8o*)
+(*S44g6xrn2BlRNTJJcH+jmY+CunL6yvhsaK7nAQMG1P1OnMXW2sTtC2m1NkL1*)
+(*Q+02Yzq2ZxToZFijMCvkuE488cTM+wt+yM0Qg0wDY1rcuQbsDGKTvvUHDYwh*)
+(*XDeu5r4Q0DynWVMIHRW5MXefkM8I+J2Ml/RIp37N118IXTRzkAF/ybfGopAv*)
+(*XFfuOjfEyW1NPD46+Xh0M+TUQ2sK0toCWdc4R8/I+o1ZtW349O79TZ6Nz40W*)
+(*j5/RFbq5RPoy4L/ZfTjIN6EhRFcRty9k0doI1QtxI2xD/HXGdDRRbgyJ2Cj9*)
+(*Jcy6xtjqWXQd5Oew213/TSgccpeh9WdoEpL6vZGbJ/fA+WatPvTLbu9f5lBy*)
+(*tDwHLQC5/LzANvXl/6Nw67pCPqMNn43vMMqnJKZFDS92F6+bNu8tZINe5r4+*)
+(*xdQP4JPj96InYB0k4jTMf6GkrSnMssY51xN+fSH6O+ZtYlXEPbBBiOFihxjQ*)
+(*/uGj2X2BsJfQuLj2KvM6uQrT48e3ryGL1kaoXrAZuZ/szY19Mu+7z0nqYeOD*)
+(*WiLsz1KuB9+YCNWahzyPeLh7zsnX22ALuM/Jk0K088XS3WOflLtnX2ODudQX*)
+(*q6EXjV1Dk3a+LbSmMATm0qQ6a5s4exp71acDQhe533776dyFsdfx6X31RYB9*)
+(*ZZ7n29eQVmsjCKFwfebdb1sQhNoGnzwuX54VdPnFhFqUNFpB4rNoV9JCHBft*)
+(*ZFLNbpp9Q7U2giAIglAqmK/S5IzKDTV69HsJgTWXWD+ImsOsa2EV0qPZt2+o*)
+(*1kYQBEEQSgXxRPoOVcO6JdRPU39DfQsafXdDB4gWh/wBPfjQ46A9oDalEkir*)
+(*tREEQRCEUkGOsRo07eQeXB1NyGb3sionkhcQBEEQBEEQBEEQBEEQBEEQBEEQ*)
+(*BEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEFI5v8AVKrucw==*)
+(*"], "Byte", ColorSpace -> "RGB", Interleaving -> True]*)
+
+
+EikonalParameterize[quadpro_List,eikpro_List,OptionsPattern[{FPFormat->False, EikParaVariable->Global`\[Lambda]}]]:=Module[{qexp,qexplist,explist,feynmeasure,feynxipart,feyngammapart,feynintg,measure,xipart,gammapart,integranddenor,xivars},
+	{feynmeasure,feynxipart,feyngammapart,{feynintg,qexp}}=If[OptionValue[FPFormat],quadpro,{{},1,1,quadpro}];
+	explist=Last/@eikpro;
+	qexplist={qexp};
+	xivars=OptionValue[EikParaVariable][#]&/@Range@Length@eikpro;
+	measure=({#,0,\[Infinity]}&/@xivars);
+	xipart=Times@@MapThread[#1^(#2-1)&,{xivars,explist}];
+	gammapart=Gamma[Plus@@(Join[explist,qexplist])]/((Times@@Gamma/@explist)(Times@@Gamma/@qexplist));
+	integranddenor={{Total[feynintg]+2Plus@@MapThread[#1 #2&,{eikpro[[All,1]],xivars}]},Plus@@(Join[explist,qexplist])};
+	{feynmeasure~Join~measure,feynxipart xipart, feyngammapart gammapart, integranddenor}
 ];
 
 
@@ -99,12 +284,14 @@ AlphaParameterize[denor_,OptionsPattern[{ParaVariable-> Global`\[Alpha]}]]:=Modu
   {coe, intg, measure}
 ];
 
+
 GaussianIntegral[alpha_,v_,d_]:=(2\[Pi])^(-d)(\[Pi]/alpha)^(d/2)Exp[-I v^2/alpha+I d \[Pi]/4];
 
-CompleteTheSquare[expr_, Vars : {__Symbol}] := Module[{array, A, B, Cc, s, vars, sVars},
+L2CompleteTheSquare[expr_?(Length[#]==1&), Vars : {__Symbol}] :=L2CompleteTheSquare[expr[[1]],Vars];
+L2CompleteTheSquare[expr_?(!ListQ[#]&), Vars : {__Symbol}] := Module[{array, A, B, Cc, s, vars, sVars},
   vars = Intersection[Vars, Variables[expr]];
   Check[array = CoefficientArrays[expr, vars], Return[expr], CoefficientArrays::poly];
-  If[Length[array] != 3, Message[CompleteTheSquare::notquad, vars]; Return[expr]];
+  If[Length[array] != 3, Message[L2CompleteTheSquare::notquad, vars]; Return[expr]];
   {Cc, B, A} = array; A = Symmetrize[A];
   s = Simplify[1/2 Inverse[A].B, Trig -> False];
   sVars = Hold /@ (vars + s); A = Map[Hold, A, {2}];
@@ -112,7 +299,7 @@ CompleteTheSquare[expr_, Vars : {__Symbol}] := Module[{array, A, B, Cc, s, vars,
 ];
 
 ShiftVar[expr_,var_,opts:OptionsPattern[{ExpForm->True}]]:=Module[{exp, shift, newexp},
-  exp=CompleteTheSquare[
+  exp=L2CompleteTheSquare[
     -I expr /. Power[E, o__] :> o, var];
   shift = {};
   exp/. (Power[o_?(ContainsAny[Variables[#], var] &),
@@ -181,7 +368,7 @@ Module[{denor, feyn, colist, shift, Delta, newnor, nnapart, res, int, feynpara, 
 
   If[OptionValue[DisplayFeynPara],Print[feyn],Null];
 
-  colist=FactorTerms[#,feynpara /. feynpara /; !OptionValue[WithDiracDelta] :> Drop[feynpara, -1]]&/@CoefficientList[Plus@@Last@feyn,var]//.{Total[feynpara]->1};
+  colist=FactorTerms[#,feynpara /. feynpara /; !OptionValue[WithDiracDelta] :> Drop[feynpara, -1]]&/@CoefficientList[Plus@@First@Last@feyn,var]//.{Total[feynpara]->1};
   If[Length[colist]<2,shift=0,shift=colist[[2]]/2];
   Delta=colist[[1]]-(shift)^2;
   If[OptionValue[DisplayTempResults],Print[colist,"\n",feynpara]];
@@ -301,7 +488,8 @@ NLoop[denor_,nor_,var_,exm_,dim_,opts:OptionsPattern[{ExpandD->False,ExpandDOrde
     ];
 
 
-ResSolve[bIntgV_,l0_,s:OptionsPattern[{\[Epsilon]Value->Global`\[Epsilon],Assumptions->($Assumptions),Plane->1}]]:=
+ResSolve[Int_List,l0_,opt___]:=Which[Length[Int]==1,ResSolve[Int[[1]],l0,opt],Length[Int]==0,Message[ResSolve::voidinput],Length[Int]>1,Message[ResSolve::listinput];ResSolve[#,l0,opt]&/@Int];
+ResSolve[bIntgV_?(!ListQ[Head[#]]&),l0_,s:OptionsPattern[{\[Epsilon]Value->Global`\[Epsilon],Assumptions->($Assumptions),Plane->1}]]:=
 	If[#=={},Message[ResSolve::condfail],#]&@MapAt[OptionValue[Plane] #&,Map[(2\[Pi] I Residue[bIntgV,{l0,l0/.#}]&),
 		Select[#,I==Assuming[OptionValue[\[Epsilon]Value]>0&&OptionValue[Assumptions],
 		-I OptionValue[Plane] Simplify@Sign[I SeriesCoefficient[l0/.#,{OptionValue[\[Epsilon]Value],0,1}]]]&]&@DeleteDuplicates[Solve[Denominator[bIntgV]==0,l0]]],
