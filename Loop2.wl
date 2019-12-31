@@ -268,7 +268,7 @@ EikonalParameterize[quadpro_List,eikpro_List,OptionsPattern[{FPFormat->False, Ei
 	xivars=OptionValue[EikParaVariable][#]&/@Range@Length@eikpro;
 	measure=({#,0,\[Infinity]}&/@xivars);
 	xipart=Times@@MapThread[#1^(#2-1)&,{xivars,explist}];
-	gammapart=Gamma[Plus@@(Join[explist,qexplist])]/((Times@@Gamma/@explist)(Times@@Gamma/@qexplist));
+	gammapart=2^Total@explist Gamma[Plus@@(Join[explist,qexplist])]/((Times@@Gamma/@explist)(Times@@Gamma/@qexplist));
 	integranddenor={{Total[feynintg]+2Plus@@MapThread[#1 #2&,{eikpro[[All,1]],xivars}]},Plus@@(Join[explist,qexplist])};
 	{feynmeasure~Join~measure,feynxipart xipart, feyngammapart gammapart, integranddenor}
 ];
