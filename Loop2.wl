@@ -103,7 +103,7 @@ If[OptionValue[WithDiracDelta],
 ];
 gammapart=Gamma[Plus@@explist]/Times@@Gamma/@explist;
 If[AllTrue[integranddenor,!MatchQ[#,Null]&],Null,Message[FeynmanParameterize::denor];Abort[]];
-{measure,xipart,gammapart,{integranddenor,2Total[denor[[All,-1]]]}}
+{measure,xipart,gammapart,{integranddenor,Total[denor[[All,-1]]]}}
 ];
 
 
