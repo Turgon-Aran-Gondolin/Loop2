@@ -26,6 +26,8 @@ FeynmanParameterize::denor="Denorminator list is too short. ";
 AlphaParameterize::listQ="Variable \"`1`\" is not a list. ";
 GaussianIntegral::usage="GaussianIntegral[alpha,v,d] gives Gaussian integral Exp[i(\[Alpha]k^2-2v\[CenterDot]k)] in d dimension Euclidean space. ";
 ExpandDot::usage;
+RemoveDot::usage;
+SortDot::usage;
 ShiftVar::usage;
 ShiftVar::CTSIC="Complete the square operation results in incomplete square. ";
 WithDiracDelta::usage="";
