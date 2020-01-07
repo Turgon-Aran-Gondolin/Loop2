@@ -76,7 +76,8 @@ Ffeyn[\[CapitalDelta]_,d_,n_,\[Beta]_,OptionsPattern[{NoDelta->False,Euclidean->
 If[OptionValue[NoDelta],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n] (1/((If[OptionValue[Euclidean],1,-1])\[CapitalDelta](*/.\[CapitalDelta]/;(!OptionValue[Euclidean])->-\[CapitalDelta]*)))^(n-d/2-\[Beta])];
 
 
-GatherCoefficients[expr_,var_List]:=Map[Times@@#&,GatherBy[List@@expr,And@@(Function[x,FreeQ[#,x]]/@{l1z})&&]]
+GatherCoefficients[expr_,var_List]:=Map[Times@@#&,GatherBy[List@@expr,And@@(Function[x,FreeQ[#,x]]/@var)&]]
+GatherCoefficients[expr_,var: Except[_List]]:=Map[Times@@#&,GatherBy[List@@expr,And@@(Function[x,FreeQ[#,x]]/@{var})&]]
 
 
 ExpandDot[expr_,vec_?(!ListQ@#&)]:=ExpandDot[expr,{vec}];
