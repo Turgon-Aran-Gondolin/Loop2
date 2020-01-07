@@ -7,11 +7,6 @@ L2OneLoop::usage="L2OneLoop[denor,nor,k,exm,dim], \n i.e. L2OneLoop[{{k-p},{k,m^
 L2TwoLoop::usage="L2TwoLoop[denor1,denor2,nor,k1,k2,exm,dim], \n i.e. L2TwoLoop[{{k2-k1,1},{k2,2mE,1}},{{k1-p,1},{k1,2mE,2}},k1^4,k2,k1,p,d]";
 NLoop::usage
 L2LoopIntegrate::usage="L2LoopIntegrate[integrand,Assumptions->{}]";
-ResSolve::usage;
-ResSolve::condfail="ResSolve returns empty list, possible non-sufficient conditions. ";
-ResSolve::voidinput="Your input is an empty list, check again. ";
-ResSolve::listinput="Your input is a list, ResSolve will process it individually, but you should check if it's what you want. ";
-SphericalMeasurement::usage;
 FeynmanParameterize::usage="";
 AlphaParameterize::usage="";
 EikonalParameterize::usage="";
@@ -25,9 +20,6 @@ FeynmanParameterize::listQ="Variable \"`1`\" is not a list. ";
 FeynmanParameterize::denor="Denorminator list is too short. ";
 AlphaParameterize::listQ="Variable \"`1`\" is not a list. ";
 GaussianIntegral::usage="GaussianIntegral[alpha,v,d] gives Gaussian integral Exp[i(\[Alpha]k^2-2v\[CenterDot]k)] in d dimension Euclidean space. ";
-ExpandDot::usage;
-RemoveDot::usage;
-SortDot::usage;
 ShiftVar::usage;
 ShiftVar::CTSIC="Complete the square operation results in incomplete square. ";
 WithDiracDelta::usage="";
@@ -50,6 +42,19 @@ ExpForm;
 ShiftAndIntegrate::usage="ShiftAndIntegrate[expr,var,d]";
 
 
+(*Auxiliary functions*)
+ResSolve::usage="ResSolve[expr_(List|Expr),var,\[Epsilon]Value->\[Epsilon],Assumptions->$Assumptions,Plane->1]";
+ResSolve::condfail="ResSolve returns empty list, possible non-sufficient conditions. ";
+ResSolve::voidinput="Your input is an empty list, check again. ";
+ResSolve::listinput="Your input is a list, ResSolve will process it individually, but you should check if it's what you want. ";
+GatherCoefficients::usage="GatherCoefficients[expr,var_List]";
+(*Dot functions*)
+ExpandDot::usage="ExpandDot[expr,vec_List]";
+RemoveDot::usage="RemoveDot[expr,l,D->d] | RemoveDot[expr,l,d]";
+SortDot::usage="SortDot[expr]";
+SphericalMeasurement::usage="SphericalMeasurement[l,D->d] | SphericalMeasurement[l,\[Theta],D->d], including $1/(2\[Pi])^d$";
+
+
 Begin["Private`"]
 
 
@@ -69,6 +74,9 @@ SetAttributes[CenterDot,Orderless];
 
 Ffeyn[\[CapitalDelta]_,d_,n_,\[Beta]_,OptionsPattern[{NoDelta->False,Euclidean->True}]]:=
 If[OptionValue[NoDelta],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n] (1/((If[OptionValue[Euclidean],1,-1])\[CapitalDelta](*/.\[CapitalDelta]/;(!OptionValue[Euclidean])->-\[CapitalDelta]*)))^(n-d/2-\[Beta])];
+
+
+GatherCoefficients[expr_,var_List]:=Map[Times@@#&,GatherBy[List@@expr,And@@(Function[x,FreeQ[#,x]]/@{l1z})&&]]
 
 
 ExpandDot[expr_,vec_?(!ListQ@#&)]:=ExpandDot[expr,{vec}];
