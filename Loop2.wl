@@ -90,7 +90,7 @@ OrderlessDelete[expr_]:=DeleteDuplicatesBy[expr,Sort[#]&];
 PermutateDotProduct[dotvars_,4]:=SortDot[Plus@@Map[Times@@#&,OrderlessDelete[DeleteCases[Permutations[Map[Dot@@#&,OrderlessDelete[Permutations[dotvars,{2}]]],{2}],_?(Length[Variables[#/.Dot[a_,b_]:>{a,b}]]<4&)]]]];
 
 RemoveDot[expr_,l_,d_]:=RemoveDot[expr,l,D->d];
-RemoveDot[expr_,l_,OptionsPattern[{D->Global`d}]]:=(Print["Dimension set at ", OptionValue[D]];Plus@@(Block[{dotlist=Cases[#,Dot[l,a_],{0,Infinity}],dotvars=#/.Dot[l,a_]:>a},If[OddQ[Length@dotlist],0,Switch[Length@dotlist,0,#,2,1/OptionValue[D] l^2 Times@@dotvars,4,1/(OptionValue[D](OptionValue[D]+2)) l^4 PermutateDotProduct[dotvars]]]]&/@List@@Expand[expr/. (a_).l:>l.a]));
+RemoveDot[expr_,l_,OptionsPattern[{D->Global`d}]]:=(Print["Dimension set at ", OptionValue[D]];Plus@@(Block[{dotlist=Cases[#,Dot[l,a_],{0,Infinity}],dotvars= Cases[# , Dot[l, a_] :> a, {0, Infinity}]},If[OddQ[Length@dotlist],0,Switch[Length@dotlist,0,#,2,1/OptionValue[D] l^2 Dot@@dotvars,4,1/(OptionValue[D](OptionValue[D]+2)) l^4 PermutateDotProduct[dotvars,4]]]]&/@List@@Expand[expr/. (a_).l:>l.a]));
 
 
 (*denor is either {k-l,1}=(k-l)^2 or {k,m^2,1}=k^2-m^2*)
