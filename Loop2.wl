@@ -50,9 +50,11 @@ ResSolve::listinput="Your input is a list, ResSolve will process it individually
 GatherCoefficients::usage="GatherCoefficients[expr,var_List]";
 (*Dot functions*)
 ExpandDot::usage="ExpandDot[expr,vec_List]";
+PermutateDotProduct;
 RemoveDot::usage="RemoveDot[expr,l,D->d] | RemoveDot[expr,l,d]";
 SortDot::usage="SortDot[expr]";
 SphericalMeasurement::usage="SphericalMeasurement[l,D->d] | SphericalMeasurement[l,\[Theta],D->d], including $1/(2\[Pi])^d$";
+ToDot::usage="ToDot[expr,vec]";
 
 
 Begin["Private`"]
@@ -90,7 +92,11 @@ OrderlessDelete[expr_]:=DeleteDuplicatesBy[expr,Sort[#]&];
 PermutateDotProduct[dotvars_,4]:=SortDot[Plus@@Map[Times@@#&,OrderlessDelete[DeleteCases[Permutations[Map[Dot@@#&,OrderlessDelete[Permutations[dotvars,{2}]]],{2}],_?(Length[Variables[#/.Dot[a_,b_]:>{a,b}]]<4&)]]]];
 
 (*RemoveDot[expr_,l_,d_?Symbol]:=RemoveDot[expr,l,D->d];*)
-RemoveDot[expr_,l_,OptionsPattern[{D->Global`d}]]:=(Print["Dimension set at ", OptionValue[D]];Plus@@(Block[{dotlist=Cases[#,Dot[l,a_],{0,Infinity}],dotvars= Cases[# , Dot[l, a_] :> a, {0, Infinity}]},If[OddQ[Length@dotlist],0,Switch[Length@dotlist,0,#,2,1/OptionValue[D] l^2 Dot@@dotvars,4,1/(OptionValue[D](OptionValue[D]+2)) l^4 PermutateDotProduct[dotvars,4]]]]&/@List@@Expand[expr/. (a_).l:>l.a]));
+RemoveDot[expr_List,l_,o___]:=RemoveDot[#,l,o]&/@expr;
+RemoveDot[expr: Except[_List],l_,OptionsPattern[{D->Global`d}]]:=(Print["Dimension set at ", OptionValue[D]];(Block[{dotlist=Cases[#,Dot[l,a_],{0,Infinity}],dotvars= Cases[# , Dot[l, a_] :> a, {0, Infinity}]},If[OddQ[Length@dotlist],0,Switch[Length@dotlist,0,#,2,#/.Times@@dotlist->1/OptionValue[D] l^2 (Dot@@dotvars),4,#/.Times@@dotlist->1/(OptionValue[D](OptionValue[D]+2)) l^4 PermutateDotProduct[dotvars,4]]]]&/@(If[Head[#]===Plus,List@@#,#]&[Expand[expr/. (a_).l:>l.a]])))/.List->Plus;
+
+
+ToDot[expr_,vec_]:=ExpandDot[expr/.Times[n_?(!FreeQ[#,Alternatives@@vec]&),p_?(!FreeQ[#,Alternatives@@vec]&)]:>n.p/.o_^2/;(!FreeQ[o,Alternatives@@vec])&&FreeQ[o,Dot]:>SortDot@ExpandDot[o.o,vec]/.Dot[o_,o_]:>o^2,vec]
 
 
 (*denor is either {k-l,1}=(k-l)^2 or {k,m^2,1}=k^2-m^2*)
