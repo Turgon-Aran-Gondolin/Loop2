@@ -76,8 +76,8 @@ Ffeyn[\[CapitalDelta]_,d_,n_,\[Beta]_,OptionsPattern[{NoDelta->False,Euclidean->
 If[OptionValue[NoDelta],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n],(If[OptionValue[Euclidean],1,I (-1)^(n-\[Beta])])1/(4 \[Pi])^(d/2) Gamma[\[Beta]+d/2]/Gamma[d/2] Gamma[n-d/2-\[Beta]] / Gamma[n] (1/((If[OptionValue[Euclidean],1,-1])\[CapitalDelta](*/.\[CapitalDelta]/;(!OptionValue[Euclidean])->-\[CapitalDelta]*)))^(n-d/2-\[Beta])];
 
 
-GatherCoefficients[expr_,var_List]:=Map[Times@@#&,GatherBy[List@@expr,And@@(Function[x,FreeQ[#,x]]/@var)&]]
-GatherCoefficients[expr_,var: Except[_List]]:=Map[Times@@#&,GatherBy[List@@expr,And@@(Function[x,FreeQ[#,x]]/@{var})&]]
+GatherCoefficients[expr_,var_List]:=PadRight[Map[Times@@#&,GatherBy[List@@expr,And@@(Function[x,FreeQ[#,x]]/@var)&]],2,1]
+GatherCoefficients[expr_,var: Except[_List]]:=GatherCoefficients[expr,{var}]
 
 
 ExpandDot[expr_,vec_?(!ListQ@#&)]:=ExpandDot[expr,{vec}];
@@ -89,7 +89,7 @@ OrderlessDelete[expr_]:=DeleteDuplicatesBy[expr,Sort[#]&];
 
 PermutateDotProduct[dotvars_,4]:=SortDot[Plus@@Map[Times@@#&,OrderlessDelete[DeleteCases[Permutations[Map[Dot@@#&,OrderlessDelete[Permutations[dotvars,{2}]]],{2}],_?(Length[Variables[#/.Dot[a_,b_]:>{a,b}]]<4&)]]]];
 
-RemoveDot[expr_,l_,d_]:=RemoveDot[expr,l,D->d];
+(*RemoveDot[expr_,l_,d_?Symbol]:=RemoveDot[expr,l,D->d];*)
 RemoveDot[expr_,l_,OptionsPattern[{D->Global`d}]]:=(Print["Dimension set at ", OptionValue[D]];Plus@@(Block[{dotlist=Cases[#,Dot[l,a_],{0,Infinity}],dotvars= Cases[# , Dot[l, a_] :> a, {0, Infinity}]},If[OddQ[Length@dotlist],0,Switch[Length@dotlist,0,#,2,1/OptionValue[D] l^2 Dot@@dotvars,4,1/(OptionValue[D](OptionValue[D]+2)) l^4 PermutateDotProduct[dotvars,4]]]]&/@List@@Expand[expr/. (a_).l:>l.a]));
 
 
